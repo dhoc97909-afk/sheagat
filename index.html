@@ -1,1081 +1,696 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat Card Creator Pro | עריכה חיה</title>
+  <title>מערכת מבזקים - ניהול פרופילים</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/all.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    /* Basic styling and font import */
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800&display=swap');
-    body {
-      font-family: 'Heebo', sans-serif;
-      direction: rtl;
-      background-color: #f7f9fc; /* Super light, professional background */
-      color: #1f2937;
-      padding: 0;
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
+    body { font-family: 'Assistant', sans-serif; background-color: #f3f4f6; }
+    .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+    .rich-editor:empty:before { content: attr(placeholder); color: #9ca3af; }
     
-    /* Main App Layout (3-Column Grid) */
-    .app-container {
-      display: grid;
-      grid-template-columns: 1fr; /* Default to single column for mobile */
-      gap: 20px;
-      padding: 20px;
-      flex-grow: 1;
-      max-width: 1600px;
-      margin: 0 auto;
-      width: 100%;
+    .google-chat-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 16px;
+        padding: 16px;
+        max-width: 500px;
+        width: 100%;
+        transition: all 0.3s ease;
     }
-    @media (min-width: 1200px) {
-      .app-container {
-        /* Left Sidebar (250px), Center Card (Max 700px), Right Sidebar (350px) */
-        grid-template-columns: 250px minmax(0, 1fr) 350px; 
-        gap: 40px;
-        padding: 40px;
-      }
-    }
-    
-    /* Global Card Style - Elevated and clean */
-    .app-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-    
-    /* Sidebar Styling (Left & Right) */
-    .sidebar {
-      position: sticky;
-      top: 20px;
-      height: fit-content;
-      max-height: calc(100vh - 40px);
-      overflow-y: auto;
-    }
-    
-    /* Header Styling */
-    .app-header {
-      background-color: #1f2937; /* Darker header for premium feel */
-      color: white;
-      border-bottom: 1px solid #374151;
-      box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-      padding: 16px 32px;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .app-header h1 {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: white;
-    }
-
-    /* Input Styling - Minimalist and high contrast */
-    input[type="text"], input[type="number"], input[type="datetime-local"], select {
-      font-size: 15px;
-      padding: 10px 14px; 
-      border-radius: 6px;
-      background-color: #f1f5f9; /* Light gray input background */
-      color: #1f2937;
-      border: 1px solid #cbd5e1;
-      width: 100%;
-      box-sizing: border-box;
-      text-align: right;
-    }
-    input:focus, select:focus {
-        border-color: #3b82f6; 
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-        background-color: white;
-        outline: none;
-    }
-
-    /* Button Styling */
-    .btn {
-      font-size: 15px;
-      padding: 12px 16px; 
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .btn-primary {
-      background-color: #10b981; /* Green accent for main actions (Send) */
-      color: white;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-    }
-    .btn-primary:hover {
-      background-color: #059669;
-      transform: translateY(-1px);
-    }
-    .btn-secondary {
-        background-color: #f1f5f9; 
-        color: #374151;
-        border: 1px solid #e2e8f0;
-    }
-    .btn-secondary:hover {
-        background-color: #e2e8f0;
-    }
-
-    /* Center Column - Preview Card as Editor */
-    .preview-editor-wrapper {
+    .chat-header {
         display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 10px;
-    }
-    .preview-card {
-      width: 100%;
-      max-width: 500px; /* Constrain card width for mobile look */
-      background-color: #e3f2fd; 
-      border: 1px solid #bbdefb;
-      border-radius: 12px;
-      padding: 16px;
-      color: #1f2937;
-      text-align: right;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      min-height: 400px;
-    }
-    .preview-card.gradient-bg {
-        background: linear-gradient(135deg, #a7bfe8, #619aed);
-        color: #1e293b;
-    }
-
-    /* Inline Editable Elements Styling */
-    .editable-title, .editable-subtitle, .rich-editor-content {
-        padding: 5px;
-        margin: -5px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-        border: 1px solid transparent;
-        outline: none; /* Hide default outline */
-        cursor: text;
-        min-height: 1.5em; /* Ensure clicking is easy */
-    }
-    .editable-title:focus, .editable-subtitle:focus, .rich-editor-content:focus {
-        background-color: rgba(255, 255, 255, 0.7);
-        border: 1px solid #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-    }
-
-    .editable-subtitle {
-        font-size: 0.85em;
-        font-weight: 600;
-        color: #6b7280;
-        margin-bottom: 5px;
-        text-align: right;
-        display: block;
-    }
-    .editable-title {
-        font-size: 1.6rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        color: #1f2937;
-    }
-    .rich-editor-content {
-        font-size: 0.95em;
-        text-align: right;
-        min-height: 150px;
-        margin-top: 10px;
-        padding: 10px;
-        line-height: 1.6;
-    }
-
-    /* Floating/Contextual Toolbar */
-    #floatingToolbar {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #1f2937;
-        border-radius: 12px;
-        padding: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        z-index: 90;
-        display: none; /* Initially hidden */
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-        flex-wrap: wrap; 
-    }
-    #floatingToolbar.active {
-        display: flex;
-        opacity: 1;
-    }
-    #floatingToolbar button {
-        background: none;
-        border: none;
-        color: white;
-        padding: 8px 12px;
-        margin: 0 2px;
-        border-radius: 6px;
-        transition: background-color 0.2s;
-    }
-    #floatingToolbar button:hover {
-        background-color: #374151;
-    }
-    #floatingToolbar .color-picker-wrapper input[type="color"] {
-        width: 30px;
-        height: 30px;
-        background-color: #374151;
-    }
-
-    /* Right Panel specific styling */
-    .settings-group {
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 15px;
-        margin-bottom: 15px;
-    }
-    .settings-group:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    /* Button List Styling in Settings */
-    .button-item {
-        background-color: #ffffff; /* White background for editing */
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 8px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
         justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
     }
-    .button-item .input-group {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
-    .button-item input {
-        padding: 6px 8px;
-        font-size: 13px;
-        background-color: #f1f5f9;
-    }
-
-    details summary {
-        list-style: none;
-    }
-    details summary::-webkit-details-marker {
-        display: none;
-    }
+    .chat-title-area { text-align: right; flex-grow: 1; }
+    .chat-main-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+    .chat-subtitle { font-size: 14px; color: #4b5563; }
+    .chat-logo { width: 45px; height: 45px; object-fit: contain; margin-right: 12px; border-radius: 50%; }
+    .chat-divider { border-top: 1px solid #f3f4f6; margin: 12px 0; }
+    .chat-body { font-size: 16px; line-height: 1.5; color: #374151; white-space: pre-wrap; }
     
-    /* Message Box Styling */
-    #messageBox {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      font-weight:bold;
-      z-index:1000;
-      transition:opacity 0.5s ease-in-out;
-      opacity:0;
-      pointer-events:none;
-      min-width:300px;
-      text-align:center;
+    .profile-btn.active { border-color: #2563eb; background-color: #eff6ff; border-width: 2px; }
+
+    /* Animations */
+    .modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(30px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
-    #messageBox.show { opacity: 1; pointer-events: auto; }
-    .bg-error { background-color:#fee2e2; color:#b91c1c; border: 1px solid #fca5a5; }
-    .bg-success { background-color:#ecfdf5; color:#047857; border: 1px solid #34d399; }
-    .bg-info { background-color:#eff6ff; color:#2563eb; border: 1px solid #60a5fa; }
+    .editor-drag-over {
+        border-color: #2563eb !important;
+        background-color: #eff6ff !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+    }
+    .editor-drag-over::after {
+        content: '📸 שחרר להעלאה';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        inset: 0;
+        background: rgba(239,246,255,0.92);
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #2563eb;
+        pointer-events: none;
+    }
+    #editor { position: relative; }
+
+    /* Upload progress modal */
+    .upload-progress-bar {
+        height: 8px;
+        border-radius: 99px;
+        background: #e5e7eb;
+        overflow: hidden;
+        margin-top: 12px;
+    }
+    .upload-progress-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #2563eb, #60a5fa);
+        transition: width 0.3s ease;
+        width: 0%;
+    }
   </style>
 </head>
-<body>
-  
-  <header class="app-header">
-    <h1 class="flex items-center justify-center gap-3">
-        <i class="fas fa-magic text-green-400 text-2xl"></i>
-        Chat Card Creator Pro <span class="text-sm font-light text-gray-400">| עריכה חיה</span>
-    </h1>
-  </header>
+<body class="p-4 md:p-8">
 
-  <div class="app-container">
-    
-    <div class="actions-sidebar sidebar hidden lg:block">
-        <div class="app-card flex flex-col gap-4">
-            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-bolt text-green-500"></i>
-                פעולות ראשיות
-            </h2>
-            <button type="button" onclick="sendCard()" class="btn btn-primary w-full">
-              <i class="fas fa-paper-plane"></i>
-              שלח הודעה כעת
-            </button>
-            <button type="button" onclick="copyCardData()" class="btn btn-secondary w-full">
-              <i class="fas fa-clipboard"></i>
-              העתק נתוני כרטיס
-            </button>
-            
-            <details class="mt-4">
-                <summary class="font-bold cursor-pointer text-gray-700 py-2 flex justify-between items-center border-t pt-4">
-                    <span class="flex items-center gap-2"><i class="fas fa-globe text-blue-500"></i> ניהול Webhooks</span>
-                    <i class="fas fa-chevron-down text-xs"></i>
-                </summary>
-                <div class="p-2 bg-white rounded-b-lg">
-                    <h4 class="font-bold text-base text-gray-700 mb-2 mt-2">בחר ערוצים:</h4>
-                    <div id="webhookOptions" class="bg-gray-50 p-2 rounded-lg border border-gray-200 max-h-32 overflow-y-auto mb-3"></div>
-                    
-                    <h4 class="font-bold text-base text-gray-700 mb-2">הוסף חדש:</h4>
-                    <div class="flex flex-col gap-2">
-                        <input type="text" id="newWebhookName" placeholder="שם Webhook" />
-                        <input type="text" id="newWebhookUrl" placeholder="כתובת Webhook" />
-                        <button type="button" onclick="addWebhook()" class="btn btn-primary text-sm bg-blue-500 hover:bg-blue-600">
-                          <i class="fas fa-plus"></i>
-                          הוסף
-                        </button>
-                    </div>
-                </div>
-            </details>
-        </div>
-    </div>
-
-    <div class="center-editor-column">
-        <div class="preview-editor-wrapper">
-            <div class="preview-card" onfocusout="handleCardFocusOut(event)">
-                <input type="text" id="headerImageUrl" placeholder="URL של תמונה לכותרת (אופציונלי)" class="w-full text-center mb-3 text-sm focus:border-blue-500 focus:shadow-md" oninput="updatePreview()" />
-                <img id="previewHeaderImage" alt="תמונה בכותרת" class="hidden max-w-full rounded-t-lg mb-4" />
-                
-                <span class="editable-subtitle" id="previewSenderName" contenteditable="true" data-placeholder="שם השולח (אופציונלי)" oninput="updateExternalInput(this, 'senderNameInput')">הודעה חדשה</span>
-                <div class="editable-title" id="previewTitle" contenteditable="true" data-placeholder="כותרת הכרטיס (חובה)" oninput="updateExternalInput(this, 'cardTitleInput')">כותרת ההודעה המרכזית</div>
-                
-                <div id="richEditor" contenteditable="true" class="rich-editor-content" aria-label="תוכן ההודעה" data-placeholder="👋 אנא הכנס כאן את תוכן ההודעה. נסה לעצב טקסטים שונים." onfocus="handleEditorFocus(true)" oninput="updatePreview()">
-                  👋 אנא הכנס כאן את תוכן ההודעה. נסה לעצב טקסטים שונים.
-                </div>
-                
-                <img id="previewImage" alt="תמונה בכרטיס" class="hidden max-w-full rounded-lg mt-4 shadow-md" />
-                
-                <div id="previewButtonList" class="flex flex-col gap-2 mt-4"></div>
-                
-                <div id="previewFooter" class="text-xs text-center mt-4 pt-4 border-t border-gray-300 text-gray-500">נבנה על ידי <a href="https://grafi-art.com" target="_blank" style="color: #2563eb; text-decoration: none;">grafi-art.com</a></div>
+    <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black/60 backdrop-blur-md p-4">
+        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full card-shadow modal-enter text-center">
+            <div class="w-24 h-24 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl animate-pulse">
+                <i class="fas fa-bolt"></i>
             </div>
-        </div>
-
-        <div id="floatingToolbar" class="flex flex-wrap gap-2">
-            <button type="button" onclick="execCmd('bold')" title="מודגש" class="font-bold">B</button>
-            <button type="button" onclick="execCmd('italic')" title="נטוי" class="italic">I</button>
-            <button type="button" onclick="execCmd('underline')" title="קו תחתון" class="underline">U</button>
-            <button type="button" onclick="execCmd('insertUnorderedList')" title="רשימה">
-              <i class="fas fa-list-ul"></i>
-            </button>
-            <button type="button" onclick="execCmd('justifyRight')" title="יישור לימין">
-              <i class="fas fa-align-right"></i>
-            </button>
-            <button type="button" onclick="insertLinkPrompt()" title="הטמעת קישור">
-              <i class="fas fa-link"></i>
-            </button>
-             <button type="button" onclick="applySmartColorsAndFormattingWithAI()" title="צבעי AI" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white">
-                <span id="aiButtonText"><i class="fas fa-magic"></i> AI</span>
-                <span id="aiSpinner" class="spinner hidden"></span>
-             </button>
-            <div class="color-picker-wrapper">
-                 <input type="color" id="fontColor" value="#1f2937" onchange="execCmd('foreColor', this.value)" title="בחר צבע טקסט" />
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">רגע, זה חירום?</h3>
+            <p class="text-gray-500 mb-8 leading-relaxed">זיהינו מילות מפתח של "צבע אדום". האם תרצה לשלוח את זה תחת פרופיל החירום?</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="handleModalChoice('switch')" class="w-full bg-red-600 text-white font-bold py-4 rounded-2xl hover:bg-red-700 transition shadow-lg shadow-red-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-exchange-alt"></i> כן, החלף ושלח עכשיו
+                </button>
+                <button onclick="handleModalChoice('continue')" class="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-black transition shadow-lg">
+                    שלח כמבזק רגיל בכל זאת
+                </button>
+                <button onclick="handleModalChoice('cancel')" class="w-full py-3 text-gray-500 font-semibold hover:text-gray-800 transition mt-2">
+                    ביטול וחזרה לעריכה
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="settings-sidebar sidebar">
-        <div class="app-card">
-            <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
-                <i class="fas fa-cog text-blue-500"></i>
-                הגדרות מתקדמות
-            </h2>
-            
-            <div class="settings-group">
-                <h3 class="font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-image text-blue-400"></i> תמונה בתוך כרטיס</h3>
-                <input type="text" id="imageUrl" placeholder="URL של תמונה בתוך הכרטיס" oninput="updatePreview()" class="mb-2" />
-            </div>
-
-            <div class="settings-group">
-                <h3 class="font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fas fa-mouse-pointer text-blue-400"></i> כפתורי פעולה (Action Buttons)</h3>
-                
-                <div id="buttonListContainer" class="max-h-40 overflow-y-auto mb-3 border p-2 rounded-lg bg-gray-50 min-h-[50px]">
-                    </div>
-
-                <div class="flex flex-col gap-2 border-t pt-3">
-                    <input type="text" id="newButtonText" placeholder="טקסט על הכפתור החדש" />
-                    <input type="text" id="newButtonUrl" placeholder="כתובת קישור לכפתור החדש" />
-                    <button type="button" onclick="addButton()" class="btn btn-primary text-sm bg-blue-500 hover:bg-blue-600">
-                        <i class="fas fa-plus"></i>
-                        הוסף כפתור
-                    </button>
+    <div id="statusOverlay" class="fixed inset-0 z-[60] flex items-center justify-center hidden bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-[32px] p-8 max-w-xs w-full card-shadow modal-enter text-center">
+            <div id="statusIcon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 </div>
-            </div>
-
-            <div class="settings-group">
-                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-clock text-blue-400"></i> תזמון שליחה</h3>
-                
-                <h4 class="text-sm font-semibold text-gray-600 mb-1">שליחה חד פעמית:</h4>
-                <input type="datetime-local" id="scheduledDateTime" class="w-full mb-2" />
-                <button type="button" onclick="scheduleSendAtDateTime()" class="btn btn-secondary w-full text-sm mb-4">
-                  <i class="fas fa-calendar-alt"></i>
-                  תזמן לשעה זו
+            <h3 id="statusTitle" class="text-xl font-bold text-gray-800 mb-2">שולח...</h3>
+            <p id="statusDesc" class="text-gray-500 mb-6"></p>
+            <div id="countdownAction" class="hidden">
+                <button onclick="cancelSend()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-2xl hover:bg-red-100 transition border border-red-100">
+                    ביטול שליחה
                 </button>
-                
-                <h4 class="text-sm font-semibold text-gray-600 mb-1">שליחה חוזרת:</h4>
-                <div class="flex w-full gap-2 mb-2">
-                    <input type="number" id="intervalAmount" placeholder="מספר" min="1" class="w-1/3" />
-                    <select id="intervalUnit" aria-label="יחידת זמן לשליחה" class="w-2/3">
-                      <option value="minutes">דקות</option>
-                      <option value="hours">שעות</option>
-                      <option value="days">ימים</option>
-                    </select>
-                </div>
-                <div class="flex w-full gap-2">
-                    <button type="button" onclick="startCustomAutoSend()" class="btn flex-1 bg-green-500 hover:bg-green-600 text-white text-sm">
-                      <i class="fas fa-play"></i>
-                      הפעל אוטומטי
-                    </button>
-                    <button type="button" onclick="stopCustomAutoSend()" class="btn flex-1 bg-red-500 hover:bg-red-600 text-white text-sm">
-                      <i class="fas fa-stop"></i>
-                      עצור
-                    </button>
-                </div>
             </div>
-
-            <div class="settings-group">
-                <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-palette text-blue-400"></i> עיצוב תצוגה</h3>
-                <button type="button" onclick="toggleGradient()" class="btn btn-secondary w-full mb-3 text-sm">
-                  <i class="fas fa-star-of-life"></i>
-                  החל רקע גרדיאנט
-                </button>
-                <div class="color-picker-wrapper justify-between">
-                    <label for="previewBgColor" class="text-sm font-semibold text-gray-700">צבע רקע כרטיס:</label>
-                    <input type="color" id="previewBgColor" value="#e3f2fd" onchange="changePreviewBg(this.value)" title="בחר צבע רקע" />
-                </div>
-            </div>
-            
         </div>
+    </div>
+
+    <input type="hidden" id="imgbbApiKey" value="74b5db34f7d743e270990275f1afd0ee">
+    <input type="hidden" id="googleClientId" value="856723702772-jm929ihp29ovhribfaaph17pbaq6qr3n.apps.googleusercontent.com">
+
+    <div id="uploadProgressModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-[32px] p-8 max-w-xs w-full card-shadow modal-enter text-center">
+            <div id="uploadModalIcon" class="w-20 h-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h3 id="uploadModalTitle" class="text-xl font-bold text-gray-800 mb-1">מעלה תמונה...</h3>
+            <p id="uploadModalDesc" class="text-gray-400 text-sm mb-2">אנא המתן</p>
+            <div class="upload-progress-bar">
+                <div id="uploadProgressFill" class="upload-progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="space-y-6">
+        <div class="bg-white p-6 rounded-2xl card-shadow">
+          <h2 class="text-lg font-bold mb-3 text-gray-700">בחר פרופיל שליחה:</h2>
+          <div class="grid grid-cols-2 gap-3 mb-6">
+              <button onclick="setProfile('news')" id="btn-news" class="profile-btn active border p-3 rounded-xl flex items-center gap-3 transition">
+                  <img src="https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" class="w-10 h-10 rounded-full border">
+                  <span class="font-bold text-sm">מבזק חדשות</span>
+              </button>
+              <button onclick="setProfile('red')" id="btn-red" class="profile-btn border p-3 rounded-xl flex items-center gap-3 transition">
+                  <img src="https://i.postimg.cc/ncKKRgq9/image.png" class="w-10 h-10 rounded-full border">
+                  <span class="font-bold text-sm text-red-600">צבע אדום</span>
+              </button>
+          </div>
+
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 border-t pt-4">
+            <i class="fas fa-edit"></i> עריכת תוכן
+          </h2>
+          
+          <div class="mb-4">
+            <div class="flex flex-wrap gap-2 mb-2 border-b pb-2 items-center">
+                <button onclick="format('bold')" class="p-2 hover:bg-gray-100 rounded" title="הדגשה"><i class="fas fa-bold"></i></button>
+                <button onclick="format('italic')" class="p-2 hover:bg-gray-100 rounded" title="נטוי"><i class="fas fa-italic"></i></button>
         
-        <div id="statusBox" aria-live="polite" class="text-gray-600 font-bold mt-4 min-h-[20px] text-center p-2 rounded-lg bg-yellow-100 border border-yellow-300">סטטוס: ממתין לפעולה.</div>
-    </div>
-  </div>
+                <div class="h-6 w-px bg-gray-300 mx-1"></div>
+                <button onclick="insertVideoText()" class="bg-red-50 text-red-600 text-xs font-bold px-3 py-1.5 rounded-full border border-red-200 hover:bg-red-100 transition">
+                    <i class="fas fa-video ml-1"></i> וידאו בשרשור
+                </button>
+            </div>
+            <div id="editor" class="rich-editor min-h-[120px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" contenteditable="true" placeholder="הקלד כאן... (או גרור תמונה/סרטון לכאן)" oninput="syncPreview()" ondragover="handleEditorDragOver(event)" ondragleave="handleEditorDragLeave(event)" ondrop="handleEditorDrop(event)"></div>
+          </div>
 
-  <div id="messageBox" class="fixed bottom-5 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-xl text-center z-[100] transition-opacity duration-300 opacity-0"></div>
-  
-  <footer class="app-footer">
-    </footer>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">תמונה:</label>
+              <div class="flex gap-2 items-center">
+                <input type="text" id="newsImgUrl" oninput="syncPreview()" placeholder="https://..." class="flex-1 border p-2 rounded-lg text-sm min-w-0">
+                <label id="uploadLabel" class="cursor-pointer bg-blue-100 text-blue-700 font-bold px-3 py-2 rounded-lg hover:bg-blue-200 transition text-sm flex items-center gap-1 whitespace-nowrap" title="העלה תמונה">
+                    <i id="uploadBtnIcon" class="fas fa-upload"></i>
+                    <span id="uploadBtnText">העלה</span>
+                    <input id="uploadBtn" type="file" accept="image/*" class="hidden" onchange="uploadImageToImgbb(this)">
+                </label>
+              </div>
+              <div id="uploadStatus" class="text-xs mt-1 hidden"></div>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">סרטון:</label>
+              <div class="flex gap-2 items-center">
+                <input type="text" id="videoUrl" oninput="syncPreview()" placeholder="קישור לסרטון..." class="flex-1 border p-2 rounded-lg text-sm min-w-0">
+                <label id="videoUploadLabel" class="cursor-pointer bg-purple-100 text-purple-700 font-bold px-3 py-2 rounded-lg hover:bg-purple-200 transition text-sm flex items-center gap-1 whitespace-nowrap" title="העלה סרטון">
+                    <i id="videoUploadIcon" class="fas fa-video"></i>
+                    <span id="videoUploadText">העלה</span>
+                    <input id="videoUploadInput" type="file" accept="video/*" class="hidden" onchange="uploadVideoToCatbox(this)">
+                </label>
+              </div>
+              <div id="videoUploadStatus" class="text-xs mt-1 text-gray-400">מעלה ישירות ל-Google Drive שלך</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-semibold mb-1">כפתור פעולה:</label>
+                <div class="flex gap-1">
+                    <input type="text" id="btnText" placeholder="טקסט" class="w-1/2 border p-2 rounded-lg text-sm">
+                    <input type="text" id="btnUrl" placeholder="URL" class="w-1/2 border p-2 rounded-lg text-sm">
+                </div>
+                <button onclick="addButton()" class="w-full mt-2 bg-blue-100 text-blue-700 font-bold py-1 rounded-lg hover:bg-blue-200 transition">הוסף כפתור</button>
+            </div>
+          </div>
+
+          <div id="buttonsList" class="flex flex-wrap gap-2 mb-6"></div>
+
+          <div id="sendContainer" class="relative">
+            <button id="mainSendBtn" onclick="initiateSend()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg flex justify-center items-center gap-2">
+                <i class="fas fa-paper-plane"></i> שלח כעת
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <h2 class="text-gray-500 font-bold mb-4 uppercase tracking-wider text-sm">תצוגה מקדימה חיה</h2>
+        <div class="google-chat-card card-shadow">
+            <div class="chat-header">
+                <div class="chat-title-area">
+                    <div id="previewTitle" class="chat-main-title">מבזק חדשות</div>
+                    <div id="liveTime" class="chat-subtitle">נשלח ב: --:--</div>
+                </div>
+                <img id="previewLogo" src="https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" class="chat-logo">
+            </div>
+            <div class="chat-divider"></div>
+            <div class="chat-body" id="previewText">הקלד כאן...</div>
+            <img id="bodyImgPreview" class="w-full h-48 object-cover rounded-lg mt-3 hidden">
+            <div id="videoPreview" class="hidden mt-3 bg-gray-900 rounded-lg overflow-hidden">
+                <video id="bodyVideoPreview" class="w-full max-h-48 object-contain" controls></video>
+                <div class="px-3 py-2 flex items-center gap-2">
+                    <i class="fas fa-play-circle text-white text-sm"></i>
+                    <span class="text-white text-xs font-bold">▶ סרטון מצורף</span>
+                </div>
+            </div>
+            <div id="previewButtons" class="mt-4 flex flex-col gap-2"></div>
+        </div>
+      </div>
+    </div>
 
 <script>
-    /* ======= GLOBAL VARIABLES & STATE (Simulated) ======= */
-    let autoSendIntervalId = null;
-    let scheduledTimeoutId = null;
-    let webhooks = [];
-    let cardButtons = []; 
-    
-    // External "Virtual" Inputs
-    const virtualInputs = {
-        cardTitleInput: "כותרת ההודעה המרכזית",
-        senderNameInput: "הודעה חדשה",
+    // הוובהוקים המעודכנים לכל פרופיל
+    const profiles = {
+        news: { 
+            title: "מבזק חדשות", 
+            logo: "https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png",
+            webhooks: [
+                "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
+                "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=yMlu8Oyx9HRkBeWGXCvkUtHjCr57EyyVKAm5CariuvI"
+            ]
+        },
+        red: { 
+            title: "צבע אדום", 
+            logo: "https://i.postimg.cc/ncKKRgq9/image.png",
+            webhooks: [
+                "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
+                "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IZg6yXQqGqRyXvBE26DX6t_E6IGJnKZoDokjzyjmY2E"
+            ]
+        }
     };
 
-    // DOM elements
-    const richEditor = document.getElementById('richEditor');
-    const previewHeaderImage = document.getElementById('previewHeaderImage');
-    const previewSenderName = document.getElementById('previewSenderName');
-    const previewTitle = document.getElementById('previewTitle');
-    const previewImage = document.getElementById('previewImage');
-    const previewButtonList = document.getElementById('previewButtonList'); 
-    const statusBox = document.getElementById('statusBox');
-    const webhookOptions = document.getElementById('webhookOptions');
-    const previewCard = document.querySelector('.preview-card');
-    const floatingToolbar = document.getElementById('floatingToolbar');
-    const aiButtonText = document.getElementById('aiButtonText');
-    const aiSpinner = document.getElementById('aiSpinner');
-    const headerImageUrlInput = document.getElementById('headerImageUrl');
-    const imageUrlInput = document.getElementById('imageUrl');
-    const newButtonText = document.getElementById('newButtonText');
-    const newButtonUrl = document.getElementById('newButtonUrl');
-    const buttonListContainer = document.getElementById('buttonListContainer');
+    let currentProfile = 'news';
+    let buttons = [];
+    let countdownInterval = null;
 
-
-    /* ======= UI INTERACTION FUNCTIONS ======= */
-    
-    let messageTimeout;
-    function displayMessage(text, type = 'info') {
-        const msgBox = document.getElementById('messageBox');
-        
-        clearTimeout(messageTimeout);
-        msgBox.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-xl text-center z-[100] transition-opacity duration-300';
-
-        msgBox.textContent = text;
-        
-        switch (type) {
-            case 'error':
-                msgBox.classList.add('bg-error');
-                break;
-            case 'success':
-                msgBox.classList.add('bg-success');
-                break;
-            default:
-                msgBox.classList.add('bg-info');
-                break;
-        }
-        
-        msgBox.classList.add('show');
-
-        messageTimeout = setTimeout(() => { 
-            msgBox.classList.remove('show'); 
-        }, 4000);
-    }
-    
-    window.updateExternalInput = function(element, inputName) {
-        virtualInputs[inputName] = element.textContent.trim();
-        updatePreview();
+    function setProfile(profileKey) {
+        currentProfile = profileKey;
+        document.querySelectorAll('.profile-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${profileKey}`).classList.add('active');
+        document.getElementById('previewTitle').textContent = profiles[profileKey].title;
+        document.getElementById('previewLogo').src = profiles[profileKey].logo;
+        document.getElementById('previewTitle').style.color = profileKey === 'red' ? '#dc2626' : '#1f2937';
+        syncPreview();
     }
 
-    window.handleEditorFocus = function(isFocused) {
-        if (isFocused) {
-            floatingToolbar.classList.add('active');
-        }
-    }
-    
-    window.handleCardFocusOut = function(event) {
-        if (!richEditor.contains(event.relatedTarget) && !floatingToolbar.contains(event.relatedTarget)) {
-            setTimeout(() => {
-                if (document.activeElement !== richEditor && !floatingToolbar.contains(document.activeElement)) {
-                     floatingToolbar.classList.remove('active');
-                }
-            }, 150);
-        }
-    }
-    
-    window.execCmd = function(command, value = null) {
-        if (command !== 'foreColor') richEditor.focus();
-        document.execCommand(command, false, value);
-        updatePreview();
-        if (document.activeElement !== floatingToolbar) richEditor.focus(); 
+    function format(cmd, val = null) { document.execCommand(cmd, false, val); syncPreview(); }
+
+    function insertVideoText() {
+        const editor = document.getElementById('editor');
+        editor.focus();
+        document.execCommand('insertHTML', false, '<br>וידאו בשרשור>>>');
+        syncPreview();
     }
 
-    window.insertLinkPrompt = function() {
-        richEditor.focus();
-        const selection = document.getSelection();
-        const selectedText = selection.toString();
-        const url = prompt(`הכנס כתובת קישור עבור: "${selectedText}" (כולל https://):`);
-        if (!url) return;
-        execCmd('createLink', url);
-    }
-    
-    window.toggleGradient = function() {
-        previewCard.classList.toggle('gradient-bg');
+    function getCurrentTime() {
+        const now = new Date();
+        return now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     }
 
-    window.changePreviewBg = function(color) {
-        previewCard.style.backgroundColor = color;
-    }
-    
-    // AI function remains the same (simulated)
-    window.applySmartColorsAndFormattingWithAI = async function() {
-        const text = richEditor.innerText;
-        if (text.trim() === '') {
-            displayMessage('אין טקסט לנתח.', 'info');
-            return;
-        }
-      
-        aiButtonText.classList.add('hidden');
-        aiSpinner.classList.remove('hidden');
-        
-        const simulatedResponse = [
-            {"text": "Chat Card Creator Pro", "color": "#10b981", "emoji": "✅", "bold": true}, 
-            {"text": "הודעה", "color": "#3b82f6", "emoji": "🌐", "italic": true}
-        ];
+    function syncPreview() {
+        const content = document.getElementById('editor').innerHTML;
+        document.getElementById('previewText').innerHTML = content || "הקלד כאן...";
+        const imgUrl = document.getElementById('newsImgUrl').value;
+        const imgEl = document.getElementById('bodyImgPreview');
+        if(imgUrl) { imgEl.src = imgUrl; imgEl.classList.remove('hidden'); }
+        else { imgEl.classList.add('hidden'); }
 
-        try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const parsedJson = simulatedResponse; 
-
-            let newHtml = richEditor.innerHTML;
-            parsedJson.forEach(item => {
-                const textToReplace = item.text;
-                const color = item.color || '#1f2937'; 
-                const emoji = item.emoji || '';
-                const bold = item.bold || false;
-                const italic = item.italic || false;
-            
-                const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`(?![^<]*>)${escapedText}(?![^<]*>)`, 'g');
-            
-                let formattedText = `<font color="${color}">${textToReplace}</font>`;
-                if (bold) formattedText = `<b>${formattedText}</b>`;
-                if (italic) formattedText = `<i>${formattedText}</i>`;
-
-                formattedText = `${emoji} ${formattedText}`;
-
-                newHtml = newHtml.replace(regex, formattedText);
-            });
-            richEditor.innerHTML = newHtml;
-            updatePreview();
-            displayMessage('צבעים ועיצובים הוחלו!', 'success');
-        
-        } catch (error) {
-            console.error('Error in AI function:', error);
-            displayMessage('שגיאה בתהליך העיבוד האוטומטי.', 'error');
-        } finally {
-            aiButtonText.classList.remove('hidden');
-            aiSpinner.classList.add('hidden');
-        }
-    }
-
-    /* ======= Button Management Functions (UPDATED FOR EDITING) ======= */
-    function saveButtonsToLocalStorage() {
-        localStorage.setItem('cardButtons', JSON.stringify(cardButtons));
-    }
-
-    function loadButtonsFromLocalStorage() {
-        const storedButtons = localStorage.getItem('cardButtons');
-        if (storedButtons) {
-            cardButtons = JSON.parse(storedButtons);
+        const videoUrl = document.getElementById('videoUrl').value;
+        const videoWrap = document.getElementById('videoPreview');
+        const videoEl = document.getElementById('bodyVideoPreview');
+        if (videoUrl) {
+            videoEl.src = videoUrl;
+            videoWrap.classList.remove('hidden');
         } else {
-            cardButtons = [];
+            videoWrap.classList.add('hidden');
+            videoEl.src = '';
         }
-        renderButtonsList();
+
+        document.getElementById('liveTime').textContent = "נשלח ב: " + getCurrentTime();
     }
 
-    window.addButton = function() {
-        const text = newButtonText.value.trim();
-        const url = newButtonUrl.value.trim();
+    function addButton() {
+        const text = document.getElementById('btnText').value;
+        const url = document.getElementById('btnUrl').value;
         if (text && url) {
-            const newButton = { id: Date.now().toString(), text, url };
-            cardButtons.push(newButton);
-            saveButtonsToLocalStorage();
-            newButtonText.value = '';
-            newButtonUrl.value = '';
-            displayMessage('כפתור נוסף בהצלחה.', 'success');
-            renderButtonsList();
-            updatePreview();
-        } else {
-            displayMessage('אנא מלא טקסט וקישור לכפתור.', 'error');
+            buttons.push({ id: Date.now(), text, url });
+            document.getElementById('btnText').value = '';
+            document.getElementById('btnUrl').value = '';
+            renderButtons();
         }
     }
 
-    /**
-     * NEW: Updates a specific field of a button and updates the preview.
-     */
-    window.updateButton = function(id, field, value) {
-        const buttonIndex = cardButtons.findIndex(b => b.id === id);
-        if (buttonIndex > -1) {
-            cardButtons[buttonIndex][field] = value;
-            saveButtonsToLocalStorage();
-            updatePreview();
-        }
+    function removeButton(id) {
+        buttons = buttons.filter(b => b.id !== id);
+        renderButtons();
     }
 
-    window.removeButton = function(id) {
-        cardButtons = cardButtons.filter(b => b.id !== id);
-        saveButtonsToLocalStorage();
-        displayMessage('כפתור הוסר.', 'info');
-        renderButtonsList();
-        updatePreview();
+    function renderButtons() {
+        document.getElementById('buttonsList').innerHTML = buttons.map(b => `
+            <div class="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-full text-xs">
+                <span>${b.text}</span>
+                <button onclick="removeButton(${b.id})" class="text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+        `).join('');
+        document.getElementById('previewButtons').innerHTML = buttons.map(b => `
+            <div class="w-full text-center py-2 border border-blue-200 rounded-lg text-sm font-bold text-blue-700 bg-blue-50">${b.text}</div>
+        `).join('');
     }
-    
-    function renderButtonsList() {
-        buttonListContainer.innerHTML = '';
-        if (cardButtons.length === 0) {
-            buttonListContainer.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">אין כפתורים מוגדרים.</p>';
+
+    function initiateSend() {
+        const content = document.getElementById('editor').innerText;
+        const emergencyKeywords = ["צבע אדום", "התרעה", "התרעת חירום", "אזעקה", "מרחב מוגן", "ירי רקטות", "חדירת מחבלים", "חשש לאירוע", "נפילה"];
+        const hasKeyword = emergencyKeywords.some(word => content.includes(word));
+
+        if (currentProfile === 'news' && hasKeyword) {
+            document.getElementById('customModal').classList.remove('hidden');
             return;
         }
 
-        cardButtons.forEach(b => {
-            const div = document.createElement('div');
-            div.className = 'button-item';
-            div.innerHTML = `
-                <div class="input-group">
-                    <input type="text" value="${b.text}" placeholder="טקסט כפתור" 
-                           oninput="updateButton('${b.id}', 'text', this.value)" 
-                           class="border-gray-300 focus:border-blue-400" />
-                    <input type="text" value="${b.url}" placeholder="כתובת קישור (URL)" 
-                           oninput="updateButton('${b.id}', 'url', this.value)" 
-                           class="border-gray-300 focus:border-blue-400" />
-                </div>
-                <button type="button" class="text-red-500 hover:text-red-700 p-2" onclick="removeButton('${b.id}')" title="מחק כפתור">
-                    <i class="fas fa-trash-alt text-lg"></i>
-                </button>
-            `;
-            buttonListContainer.appendChild(div);
-        });
-    }
-
-
-    /* ======= Webhooks Management Functions (Same as v4) ======= */
-    function saveWebhooksToLocalStorage() {
-        localStorage.setItem('webhooks', JSON.stringify(webhooks));
-    }
-
-    function loadWebhooksFromLocalStorage() {
-        const storedWebhooks = localStorage.getItem('webhooks');
-        if (storedWebhooks) {
-            webhooks = JSON.parse(storedWebhooks);
-        } else {
-            webhooks = [];
+        if (currentProfile === 'red' && !hasKeyword) {
+            showPrettyStatus("שגיאה", "נא להוסיף מילות חירום", "bg-red-100 text-red-600", "fa-times-circle");
+            setTimeout(hidePrettyStatus, 2000);
+            return; 
         }
-        renderWebhookOptions();
+
+        startCountdown();
     }
 
-    window.addWebhook = function() {
-        const name = document.getElementById('newWebhookName').value.trim();
-        const url = document.getElementById('newWebhookUrl').value.trim();
-        if (name && url) {
-            const newWebhook = { id: Date.now().toString(), name, url, selected: false };
-            webhooks.push(newWebhook);
-            saveWebhooksToLocalStorage();
-            document.getElementById('newWebhookName').value = '';
-            document.getElementById('newWebhookUrl').value = '';
-            displayMessage('Webhook נוסף.', 'success');
-            renderWebhookOptions();
-        } else {
-            displayMessage('אנא מלא את שני השדות.', 'error');
+    function handleModalChoice(choice) {
+        document.getElementById('customModal').classList.add('hidden');
+        if (choice === 'switch') {
+            setProfile('red');
+            startCountdown();
+        } else if (choice === 'continue') {
+            startCountdown();
         }
     }
 
-    window.removeWebhook = function(id) {
-        webhooks = webhooks.filter(w => w.id !== id);
-        saveWebhooksToLocalStorage();
-        displayMessage('Webhook הוסר.', 'info');
-        renderWebhookOptions();
-    }
+    function startCountdown() {
+        const overlay = document.getElementById('statusOverlay');
+        const title = document.getElementById('statusTitle');
+        const desc = document.getElementById('statusDesc');
+        const iconWrap = document.getElementById('statusIcon');
+        const action = document.getElementById('countdownAction');
 
-    window.toggleWebhookSelection = function(id) {
-        const webhook = webhooks.find(w => w.id === id);
-        if (webhook) {
-            webhook.selected = !webhook.selected;
-            saveWebhooksToLocalStorage();
-        }
-    }
-
-    function renderWebhookOptions() {
-        webhookOptions.innerHTML = '';
-        if (webhooks.length === 0) {
-            webhookOptions.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">אין Webhooks שמורים לבחירה.</p>';
-            return;
-        }
-        webhooks.forEach(w => {
-            const div = document.createElement('div');
-            div.className = 'flex justify-between items-center mb-1 bg-gray-100 p-2 rounded-md text-sm';
-            div.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="webhook-opt-${w.id}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${w.selected ? 'checked' : ''} onchange="toggleWebhookSelection('${w.id}')">
-                    <label for="webhook-opt-${w.id}" class="flex-grow cursor-pointer text-gray-700">${w.name}</label>
-                </div>
-                <button type="button" class="text-red-500 hover:text-red-700 text-xs p-1 rounded-full" onclick="removeWebhook('${w.id}')" title="מחק">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            `;
-            webhookOptions.appendChild(div);
-        });
-    }
-
-    /* ======= Core Payload & Sending Logic (Unchanged) ======= */
-    function getPayloadForGoogleChat() {
-        const headerImageUrl = headerImageUrlInput.value.trim();
-        const senderName = previewSenderName.textContent.trim();
-        const title = previewTitle.textContent.trim();
-        const messageContentHtml = richEditor.innerHTML;
-        const imageUrl = imageUrlInput.value.trim();
+        overlay.classList.remove('hidden');
+        action.classList.remove('hidden');
+        iconWrap.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600";
+        iconWrap.innerHTML = '<i class="fas fa-clock animate-spin"></i>';
         
-        if (!title) {
-            throw new Error('Missing card title.');
+        let timeLeft = 2;
+        title.textContent = "מכין שליחה...";
+        desc.textContent = `ההודעה תישלח בעוד ${timeLeft} שניות ל-2 קבוצות`;
+
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                desc.textContent = `ההודעה תישלח בעוד ${timeLeft} שניות ל-2 קבוצות`;
+            } else {
+                clearInterval(countdownInterval);
+                action.classList.add('hidden');
+                executeActualSend();
+            }
+        }, 1000);
+    }
+
+    function cancelSend() {
+        clearInterval(countdownInterval);
+        hidePrettyStatus();
+        showPrettyStatus("בוטל", "השליחה נעצרה", "bg-gray-100 text-gray-600", "fa-undo");
+        setTimeout(hidePrettyStatus, 1500);
+    }
+
+    async function executeActualSend() {
+        const title = document.getElementById('statusTitle');
+        const desc = document.getElementById('statusDesc');
+        const iconWrap = document.getElementById('statusIcon');
+        
+        title.textContent = "שולח כעת...";
+        desc.textContent = "שולח ל-2 הוובהוקים במקביל...";
+
+        const content = document.getElementById('editor').innerHTML;
+        const imgUrl = document.getElementById('newsImgUrl').value;
+        const videoUrl = document.getElementById('videoUrl').value;
+        const sendTime = getCurrentTime();
+        const profile = profiles[currentProfile];
+        
+        let formattedText = content.replace(/<div>/g, '\n').replace(/<\/div>/g, '').replace(/<br>/g, '\n').replace(/&nbsp;/g, ' ');
+
+        const widgets = [{ textParagraph: { text: formattedText } }];
+        if(imgUrl) { widgets.push({ image: { imageUrl: imgUrl } }); }
+        if(videoUrl) {
+            widgets.push({ buttonList: { buttons: [{ text: '▶ צפה בסרטון', onClick: { openLink: { url: videoUrl } }, color: { red: 0.29, green: 0.14, blue: 0.69, alpha: 1 } }] } });
+        }
+        if(buttons.length > 0) {
+            widgets.push({ buttonList: { buttons: buttons.map(b => ({ text: b.text, onClick: { openLink: { url: b.url } } })) } });
         }
 
-        // --- HTML to Google Chat Formatting Conversion ---
-        let formattedMessage = messageContentHtml
-            .replace(/<br>/g, '\n')
-            .replace(/<p>([\s\S]*?)<\/p>/g, '$1\n')
-            .replace(/<font color="([^"]+)">(.*?)<\/font>/g, '<font color="$1">$2</font>')
-            .replace(/<b>(.*?)<\/b>/g, '<b>$1</b>')
-            .replace(/<i>(.*?)<\/i>/g, '<i>$1</i>')
-            .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
-            .replace(/<ul>([\s\S]*?)<\/ul>/g, (match, p1) => {
-                const items = p1.match(/<li>(.*?)<\/li>/g);
-                return items ? items.map(item => `\n • ${item.replace(/<li>|<\/li>/g, '').trim()}`).join('') : '';
-            })
-            .replace(/<ol>([\s\S]*?)<\/ol>/g, (match, p1) => {
-                const items = p1.match(/<li>(.*?)<\/li>/g);
-                return items ? items.map((item, index) => `\n ${index + 1}. ${item.replace(/<li>|<\/li>/g, '').trim()}`).join('') : '';
-            });
-            
-        formattedMessage = formattedMessage.replace(/(\n\s*){3,}/g, '\n\n').trim();
-
-        const cardWidgets = [];
-        
-        if (formattedMessage.trim()) {
-            cardWidgets.push({ "textParagraph": { "text": formattedMessage.trim() } });
-        }
-        
-        if (imageUrl) {
-            cardWidgets.push({ "image": { "imageUrl": imageUrl } });
-        }
-        
-        const chatButtons = cardButtons
-            .filter(b => b.text && b.url)
-            .map(b => ({
-                "text": b.text,
-                "onClick": { "openLink": { "url": b.url } }
-            }));
-
-
-        if (chatButtons.length > 0) {
-            cardWidgets.push({
-                "buttonList": {
-                    "buttons": chatButtons
-                }
-            });
-        }
-        
-        const payload = {
-            "cardsV2": [{
-                "cardId": "unique-card-id",
-                "card": {
-                    "header": { 
-                        "title": title, 
-                        "subtitle": senderName, 
-                        ...(headerImageUrl && { "imageUrl": headerImageUrl, "imageType": "SQUARE" })
+        const payload = { 
+            cardsV2: [{ 
+                card: { 
+                    header: { 
+                        title: profile.title, 
+                        subtitle: "נשלח ב: " + sendTime, 
+                        imageUrl: profile.logo, 
+                        imageType: "CIRCLE" 
                     },
-                    "sections": [{ "widgets": cardWidgets.length > 0 ? cardWidgets : [{ "textParagraph": { "text": "(הודעה ללא תוכן גוף)" } }] }]
-                }
-            }]
+                    sections: [{ widgets }] 
+                } 
+            }] 
         };
 
-        return payload;
-    }
-    
-    window.sendCard = async function() {
-        const selectedWebhooks = webhooks.filter(w => w.selected);
-        if (selectedWebhooks.length === 0) {
-            displayMessage('אנא בחר Webhook אחד לפחות.', 'error');
-            return;
-        }
-        
-        let allSent = true;
-        let googleChatPayload;
-        
         try {
-            googleChatPayload = getPayloadForGoogleChat();
-        } catch (e) {
-            displayMessage('שגיאה: חסרה כותרת כרטיס.', 'error');
-            return;
-        }
+            // שליחה לכל הוובהוקים במקביל
+            const sendPromises = profile.webhooks.map(url => 
+                fetch(url, { method: 'POST', body: JSON.stringify(payload) })
+            );
 
-        for (const webhook of selectedWebhooks) {
-            let payload;
-            
-            if (webhook.url.includes('chat.googleapis.com')) {
-                payload = googleChatPayload;
+            const results = await Promise.all(sendPromises);
+            const allOk = results.every(res => res.ok);
+
+            if (allOk) { 
+                iconWrap.className = "w-20 h-20 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 text-3xl";
+                iconWrap.innerHTML = '<i class="fas fa-check-double"></i>';
+                title.textContent = "נשלח בהצלחה!";
+                desc.textContent = "ההודעה פורסמה ב-2 קבוצות היעד";
+                
+                document.getElementById('editor').innerHTML = "";
+                document.getElementById('newsImgUrl').value = "";
+                document.getElementById('videoUrl').value = "";
+                buttons = [];
+                renderButtons();
+                syncPreview();
+                
+                setTimeout(hidePrettyStatus, 2500);
             } else {
-                // Generic payload for other services (Slack/Discord etc.)
-                let genericMessage = '';
-                if (previewSenderName.textContent) genericMessage += `*נשלח על ידי:* ${previewSenderName.textContent}\n`;
-                if (previewTitle.textContent) genericMessage += `*${previewTitle.textContent}*\n\n`;
-                genericMessage += `${richEditor.innerText.trim()}\n\n`; 
-                
-                cardButtons.forEach(b => {
-                    if (b.text && b.url) genericMessage += `[${b.text}](${b.url})\n`;
-                });
-                
-                if (imageUrlInput.value) genericMessage += `תמונה: ${imageUrlInput.value}`;
-                
-                payload = { "text": genericMessage.trim() || "הודעה ריקה" };
+                throw new Error("חלק מהשליחות נכשלו");
             }
+        } catch (e) { 
+            showPrettyStatus("שגיאה", "תקלה בשליחה לאחד או יותר מהוובהוקים", "bg-red-100 text-red-600", "fa-wifi");
+            setTimeout(hidePrettyStatus, 3000);
+        }
+    }
 
-            try {
-                const response = await fetch(webhook.url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (response.status < 200 || response.status >= 300) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${await response.text()}`);
+    function showPrettyStatus(title, message, colorClass, icon) {
+        const overlay = document.getElementById('statusOverlay');
+        const titleEl = document.getElementById('statusTitle');
+        const descEl = document.getElementById('statusDesc');
+        const iconWrap = document.getElementById('statusIcon');
+        const action = document.getElementById('countdownAction');
+
+        overlay.classList.remove('hidden');
+        action.classList.add('hidden');
+        iconWrap.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
+        iconWrap.innerHTML = `<i class="fas ${icon}"></i>`;
+        titleEl.textContent = title;
+        descEl.textContent = message;
+    }
+
+    function hidePrettyStatus() {
+        document.getElementById('statusOverlay').classList.add('hidden');
+    }
+
+    // ── Upload modal helpers (uses statusOverlay) ─────────────────────
+    function showUploadModal(title, desc, progress, iconClass, iconColor) {
+        const overlay = document.getElementById('statusOverlay');
+        document.getElementById('statusTitle').textContent = title;
+        document.getElementById('statusDesc').textContent = desc;
+        document.getElementById('countdownAction').classList.add('hidden');
+        const iconWrap = document.getElementById('statusIcon');
+        iconWrap.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconColor}`;
+        iconWrap.innerHTML = `<i class="${iconClass}"></i>`;
+
+        // progress bar
+        let bar = document.getElementById('uploadInlineBar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'uploadInlineBar';
+            bar.className = 'upload-progress-bar mt-2';
+            bar.innerHTML = '<div id="uploadInlineFill" class="upload-progress-fill"></div>';
+            overlay.querySelector('.bg-white').appendChild(bar);
+        }
+        bar.style.display = progress >= 0 ? 'block' : 'none';
+        document.getElementById('uploadInlineFill').style.width = progress + '%';
+        overlay.classList.remove('hidden');
+    }
+    function hideUploadModal() {
+        document.getElementById('statusOverlay').classList.add('hidden');
+        const bar = document.getElementById('uploadInlineBar');
+        if (bar) { bar.style.display = 'none'; document.getElementById('uploadInlineFill').style.width = '0%'; }
+    }
+
+    // ── Drag & drop on editor ─────────────────────────────────────────
+    function handleEditorDragOver(e) {
+        e.preventDefault();
+        const hasMedia = [...(e.dataTransfer.items || [])].some(i => i.kind === 'file' && (i.type.startsWith('image/') || i.type.startsWith('video/')));
+        if (hasMedia) {
+            e.dataTransfer.dropEffect = 'copy';
+            e.currentTarget.classList.add('editor-drag-over');
+        }
+    }
+    function handleEditorDragLeave(e) {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            e.currentTarget.classList.remove('editor-drag-over');
+        }
+    }
+    function handleEditorDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('editor-drag-over');
+        const files = [...(e.dataTransfer.files || [])];
+        const imgFile = files.find(f => f.type.startsWith('image/'));
+        const vidFile = files.find(f => f.type.startsWith('video/'));
+        if (imgFile) uploadImageFile(imgFile);
+        else if (vidFile) uploadVideoFile(vidFile);
+    }
+
+    // ── Upload from file input (image) ────────────────────────────────
+    async function uploadImageToImgbb(input) {
+        const file = input.files[0];
+        if (!file) return;
+        input.value = '';
+        await uploadImageFile(file);
+    }
+
+    // ── Upload from file input (video) ────────────────────────────────
+    async function uploadVideoToCatbox(input) {
+        const file = input.files[0];
+        if (!file) return;
+        input.value = '';
+        await uploadVideoFile(file);
+    }
+
+    // ── Google Drive upload ───────────────────────────────────────────
+    let driveAccessToken = null;
+
+    function getDriveToken() {
+        return new Promise((resolve, reject) => {
+            if (driveAccessToken) { resolve(driveAccessToken); return; }
+            const clientId = document.getElementById('googleClientId').value.trim();
+            if (!clientId || clientId === 'YOUR_CLIENT_ID_HERE') {
+                reject(new Error('נא להגדיר Google Client ID בקובץ'));
+                return;
+            }
+            const client = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (resp) => {
+                    if (resp.error) { reject(new Error(resp.error)); return; }
+                    driveAccessToken = resp.access_token;
+                    resolve(driveAccessToken);
                 }
-            } catch (error) {
-                console.error(`Error sending message to webhook ${webhook.name}:`, error);
-                allSent = false;
-            }
-        }
-        
-        if (allSent) {
-            displayMessage(`הודעה נשלחה בהצלחה ל-${selectedWebhooks.length} Webhooks.`, 'success');
-            statusBox.textContent = 'נשלח בהצלחה!';
-        } else {
-            displayMessage('שגיאה בשליחה לאחד או יותר מה-Webhooks.', 'error');
-            statusBox.textContent = 'שגיאת שליחה.';
-        }
-    }
-
-    window.copyCardData = function() {
-        try {
-            const payload = getPayloadForGoogleChat();
-            const jsonPayload = JSON.stringify(payload, null, 2);
-            
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = jsonPayload;
-            tempTextarea.style.position = 'fixed';
-            tempTextarea.style.top = '0';
-            tempTextarea.style.left = '0';
-            tempTextarea.style.opacity = '0';
-            document.body.appendChild(tempTextarea);
-            tempTextarea.focus();
-            tempTextarea.select();
-            
-            document.execCommand('copy');
-            document.body.removeChild(tempTextarea);
-            displayMessage('נתוני ה-JSON הועתקו ללוח!', 'success');
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-            displayMessage('העתקה נכשלה. בדוק שהכותרת מולאה.', 'error');
-        }
-    }
-    
-    // Scheduling functions (unchanged)
-    window.startCustomAutoSend = function() { 
-        if (autoSendIntervalId) {
-            displayMessage('השליחה האוטומטית כבר פעילה.', 'info');
-            return;
-        }
-        const intervalAmount = parseInt(document.getElementById('intervalAmount').value, 10);
-        const intervalUnit = document.getElementById('intervalUnit').value;
-
-        if (isNaN(intervalAmount) || intervalAmount <= 0) {
-            displayMessage('אנא הזן מספר תקין.', 'error');
-            return;
-        }
-
-        let ms;
-        switch (intervalUnit) {
-            case 'minutes': ms = intervalAmount * 60 * 1000; break;
-            case 'hours': ms = intervalAmount * 3600 * 1000; break;
-            case 'days': ms = intervalAmount * 24 * 3600 * 1000; break;
-            default: displayMessage('יחידת זמן לא חוקית.', 'error'); return;
-        }
-        
-        statusBox.textContent = `שליחה אוטומטית מופעלת, הודעה תישלח כל ${intervalAmount} ${intervalUnit}.`;
-        displayMessage(`שליחה אוטומטית מופעלת!`, 'success');
-        
-        sendCard();
-        autoSendIntervalId = setInterval(() => { sendCard(); }, ms);
-    }
-    
-    window.stopCustomAutoSend = function() { 
-        if (autoSendIntervalId) {
-            clearInterval(autoSendIntervalId);
-            autoSendIntervalId = null;
-            statusBox.textContent = 'השליחה האוטומטית הופסקה.';
-            displayMessage('השליחה האוטומטית הופסקה.', 'info');
-        } else {
-            displayMessage('אין שליחה אוטומטית פעילה.', 'info');
-        }
-    }
-
-    window.scheduleSendAtDateTime = function() { 
-        if (scheduledTimeoutId) {
-            clearTimeout(scheduledTimeoutId);
-            scheduledTimeoutId = null;
-            displayMessage('תזמון קודם בוטל.', 'info');
-        }
-        
-        if (autoSendIntervalId) {
-            clearInterval(autoSendIntervalId);
-            autoSendIntervalId = null;
-            displayMessage('שליחה אוטומטית קבועה בוטלה לטובת התזמון החד פעמי.', 'info');
-        }
-
-        const scheduledDateTime = document.getElementById('scheduledDateTime').value;
-        if (!scheduledDateTime) {
-            displayMessage('אנא בחר תאריך ושעה לתזמון.', 'error');
-            return;
-        }
-
-        const scheduledDate = new Date(scheduledDateTime);
-        const now = new Date();
-        const delayMs = scheduledDate.getTime() - now.getTime();
-
-        if (delayMs <= 0) {
-            displayMessage('התאריך והשעה חייבים להיות בעתיד.', 'error');
-            return;
-        }
-
-        statusBox.textContent = `הודעה תשלח בתאריך: ${scheduledDate.toLocaleString()}.`;
-        displayMessage(`הודעה תשלח כמתוכנן.`, 'success');
-        
-        scheduledTimeoutId = setTimeout(() => {
-            try {
-                sendCard();
-                document.getElementById('statusBox').textContent = 'השליחה המתוזמנת הסתיימה.';
-            } catch (e) {
-                 document.getElementById('statusBox').textContent = 'שגיאה בשליחה המתוזמנת.';
-            } finally {
-                scheduledTimeoutId = null;
-            }
-        }, delayMs);
-    }
-
-    /* ======= PREVIEW & UPDATE LOGIC (Main Function) ======= */
-    function updatePreview() {
-        // --- 1. Header Image ---
-        const headerImgUrl = headerImageUrlInput.value.trim();
-        if (headerImgUrl) {
-            previewHeaderImage.src = headerImgUrl;
-            previewHeaderImage.classList.remove('hidden');
-        } else {
-            previewHeaderImage.src = '';
-            previewHeaderImage.classList.add('hidden');
-        }
-        
-        // --- 2. Image in Body ---
-        const imgUrl = imageUrlInput.value.trim();
-        if (imgUrl) {
-            previewImage.src = imgUrl;
-            previewImage.classList.remove('hidden');
-        } else {
-            previewImage.src = '';
-            previewImage.classList.add('hidden');
-        }
-
-        // --- 3. Button List in Body ---
-        previewButtonList.innerHTML = '';
-        const validButtons = cardButtons.filter(b => b.text.trim() && b.url.trim());
-        
-        if (validButtons.length > 0) {
-            validButtons.forEach(b => {
-                const buttonDiv = document.createElement('div');
-                buttonDiv.className = 'text-center w-full';
-                buttonDiv.innerHTML = `<a href="${b.url}" target="_blank" style="background-color: #3b82f6; color: white; font-weight: bold; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; transition: background-color 0.2s; margin: 4px;">${b.text}</a>`;
-                previewButtonList.appendChild(buttonDiv);
             });
-            previewButtonList.classList.remove('hidden');
-        } else {
-            previewButtonList.classList.add('hidden');
+            client.requestAccessToken();
+        });
+    }
+
+    async function uploadVideoFile(file) {
+        const maxMB = 1024;
+        if (file.size > maxMB * 1024 * 1024) {
+            showUploadModal('קובץ גדול מדי', `המקסימום הוא ${maxMB}MB`, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 2500);
+            return;
+        }
+
+        showUploadModal('מחבר ל-Google...', 'נא אשר גישה בחלון שנפתח', 5, 'fab fa-google', 'bg-blue-100 text-blue-600');
+
+        let token;
+        try {
+            token = await getDriveToken();
+        } catch (e) {
+            showUploadModal('שגיאת כניסה', e.message, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 3000);
+            return;
+        }
+
+        showUploadModal('מעלה לDrive...', file.name, 20, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
+
+        try {
+            // 1. Upload file
+            const metadata = { name: file.name, mimeType: file.type };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', file);
+
+            const uploadRes = await fetch(
+                'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+                { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
+            );
+            if (!uploadRes.ok) throw new Error(`שגיאת העלאה: ${uploadRes.status}`);
+            const { id } = await uploadRes.json();
+
+            showUploadModal('מגדיר הרשאות...', 'מכין קישור לצפייה', 75, 'fas fa-lock-open', 'bg-blue-100 text-blue-600');
+
+            // 2. Make public
+            await fetch(`https://www.googleapis.com/drive/v3/files/${id}/permissions`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'reader', type: 'anyone' })
+            });
+
+            const viewUrl = `https://drive.google.com/file/d/${id}/view`;
+            document.getElementById('videoUrl').value = viewUrl;
+            syncPreview();
+            showUploadModal('הועלה בהצלחה! 🎉', 'הסרטון זמין ב-Google Drive', 100, 'fas fa-check-double', 'bg-green-100 text-green-600');
+            setTimeout(hideUploadModal, 3000);
+
+        } catch (e) {
+            if (e.message.includes('401')) driveAccessToken = null;
+            showUploadModal('העלאה נכשלה', e.message, 0, 'fas fa-wifi', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 3000);
         }
     }
 
+    // ── Core upload logic ─────────────────────────────────────────────
+    async function uploadImageFile(file) {
+        const apiKey = document.getElementById('imgbbApiKey').value.trim();
 
-    /* ======= Initialization ======= */
-    window.onload = function() {
-        loadWebhooksFromLocalStorage();
-        loadButtonsFromLocalStorage(); 
-        updatePreview();
-        
-        if (previewSenderName) previewSenderName.textContent = virtualInputs.senderNameInput;
-        if (previewTitle) previewTitle.textContent = virtualInputs.cardTitleInput;
-        
-        if (headerImageUrlInput) headerImageUrlInput.addEventListener('input', updatePreview);
-        if (imageUrlInput) imageUrlInput.addEventListener('input', updatePreview);
-    };
+        if (!apiKey) {
+            showUploadModal('שגיאה', 'מפתח API חסר', 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 2000);
+            return;
+        }
+
+        showUploadModal('מכין תמונה...', file.name, 10, 'fas fa-image', 'bg-blue-100 text-blue-600');
+
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            showUploadModal('מעלה לשרת...', 'שולח לimgbb', 50, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
+
+            const formData = new FormData();
+            formData.append('key', apiKey);
+            formData.append('image', base64);
+
+            const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
+
+            showUploadModal('מעבד תגובה...', 'כמעט סיימנו', 85, 'fas fa-cog fa-spin', 'bg-blue-100 text-blue-600');
+
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('newsImgUrl').value = data.data.url;
+                syncPreview();
+                showUploadModal('הועלה בהצלחה!', data.data.url.substring(0, 40) + '...', 100, 'fas fa-check-double', 'bg-green-100 text-green-600');
+                setTimeout(hideUploadModal, 2000);
+            } else {
+                throw new Error(data.error?.message || 'שגיאה לא ידועה');
+            }
+        } catch (e) {
+            showUploadModal('העלאה נכשלה', e.message, 0, 'fas fa-wifi', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 3000);
+        }
+    }
+
+    syncPreview();
 </script>
 </body>
 </html>
