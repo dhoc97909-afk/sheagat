@@ -565,6 +565,7 @@
 
     // ── Google Drive upload ───────────────────────────────────────────
     let driveAccessToken = null;
+    let driveFolderId = null; // תיקייה ייעודית לסרטונים – נוצרת פעם אחת לסשן
 
     function getDriveToken() {
         return new Promise((resolve, reject) => {
@@ -587,6 +588,38 @@
         });
     }
 
+    // מחזיר ID של תיקיית "סרטוני מבזק" – מוצא קיימת או יוצר חדשה
+    async function getOrCreateFolder(token) {
+        if (driveFolderId) return driveFolderId;
+
+        // חיפוש תיקייה קיימת שנוצרה ע"י האפליקציה
+        const searchRes = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q=name%3D'%D7%A1%D7%A8%D7%98%D7%95%D7%A0%D7%99+%D7%9E%D7%91%D7%96%D7%A7'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.files && searchData.files.length > 0) {
+                driveFolderId = searchData.files[0].id;
+                return driveFolderId;
+            }
+        }
+
+        // יצירת תיקייה חדשה
+        const folderRes = await fetch(
+            'https://www.googleapis.com/drive/v3/files?fields=id',
+            {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'סרטוני מבזק', mimeType: 'application/vnd.google-apps.folder' })
+            }
+        );
+        if (!folderRes.ok) throw new Error(`שגיאה ביצירת תיקייה: ${folderRes.status}`);
+        const folder = await folderRes.json();
+        driveFolderId = folder.id;
+        return driveFolderId;
+    }
+
     async function uploadVideoFile(file) {
         const maxMB = 1024;
         if (file.size > maxMB * 1024 * 1024) {
@@ -606,11 +639,22 @@
             return;
         }
 
+        showUploadModal('מכין תיקייה...', 'מאתר תיקיית "סרטוני מבזק"', 10, 'fas fa-folder-open', 'bg-blue-100 text-blue-600');
+
+        let folderId;
+        try {
+            folderId = await getOrCreateFolder(token);
+        } catch (e) {
+            showUploadModal('שגיאת תיקייה', e.message, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
+            setTimeout(hideUploadModal, 3000);
+            return;
+        }
+
         showUploadModal('מעלה לDrive...', file.name, 20, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
 
         try {
-            // 1. Upload file
-            const metadata = { name: file.name, mimeType: file.type };
+            // 1. העלאת הקובץ לתוך התיקייה הייעודית
+            const metadata = { name: file.name, mimeType: file.type, parents: [folderId] };
             const form = new FormData();
             form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
             form.append('file', file);
@@ -624,7 +668,7 @@
 
             showUploadModal('מגדיר הרשאות...', 'מכין קישור לצפייה', 75, 'fas fa-lock-open', 'bg-blue-100 text-blue-600');
 
-            // 2. Make public
+            // 2. הרשאות ציבוריות לצפייה (ניתן לשנות בהגדרות התיקייה ב-Drive)
             await fetch(`https://www.googleapis.com/drive/v3/files/${id}/permissions`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -634,11 +678,15 @@
             const viewUrl = `https://drive.google.com/file/d/${id}/view`;
             document.getElementById('videoUrl').value = viewUrl;
             syncPreview();
-            showUploadModal('הועלה בהצלחה! 🎉', 'הסרטון זמין ב-Google Drive', 100, 'fas fa-check-double', 'bg-green-100 text-green-600');
+            showUploadModal(
+                'הועלה בהצלחה! 🎉',
+                `הסרטון נשמר בתיקיית "סרטוני מבזק" ב-Drive`,
+                100, 'fas fa-check-double', 'bg-green-100 text-green-600'
+            );
             setTimeout(hideUploadModal, 3000);
 
         } catch (e) {
-            if (e.message.includes('401')) driveAccessToken = null;
+            if (e.message.includes('401')) { driveAccessToken = null; driveFolderId = null; }
             showUploadModal('העלאה נכשלה', e.message, 0, 'fas fa-wifi', 'bg-red-100 text-red-600');
             setTimeout(hideUploadModal, 3000);
         }
