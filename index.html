@@ -650,7 +650,7 @@
             return;
         }
 
-        showUploadModal('מעלה לDrive...', file.name, 20, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
+        showUploadModal('מעלה לDrive...', file.name, 30, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
 
         try {
             // 1. העלאת הקובץ לתוך התיקייה הייעודית
@@ -665,15 +665,6 @@
             );
             if (!uploadRes.ok) throw new Error(`שגיאת העלאה: ${uploadRes.status}`);
             const { id } = await uploadRes.json();
-
-            showUploadModal('מגדיר הרשאות...', 'מכין קישור לצפייה', 75, 'fas fa-lock-open', 'bg-blue-100 text-blue-600');
-
-            // 2. הרשאות ציבוריות לצפייה (ניתן לשנות בהגדרות התיקייה ב-Drive)
-            await fetch(`https://www.googleapis.com/drive/v3/files/${id}/permissions`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'reader', type: 'anyone' })
-            });
 
             const viewUrl = `https://drive.google.com/file/d/${id}/view`;
             document.getElementById('videoUrl').value = viewUrl;
