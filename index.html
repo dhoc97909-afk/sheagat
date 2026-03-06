@@ -70,7 +70,35 @@
   </style>
 </head>
 <body class="p-4 md:p-6">
+<!-- ══ SHABBAT CHECK ══ -->
+<div id="shabbatScreen" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Assistant',sans-serif;">
+  <div style="text-align:center;color:white;padding:40px;">
+    <div style="font-size:80px;margin-bottom:20px;">🕯️🕯️</div>
+    <h1 style="font-size:52px;font-weight:800;margin:0 0 12px;letter-spacing:2px;">שבת שלום</h1>
+    <p style="font-size:20px;color:#93c5fd;margin:0;font-weight:400;">המערכת אינה פעילה בשבת</p>
+    <div style="margin-top:40px;width:60px;height:3px;background:linear-gradient(90deg,#60a5fa,#a78bfa);border-radius:99px;margin-left:auto;margin-right:auto;"></div>
+    <p style="font-size:14px;color:#6b7280;margin-top:20px;">שאגת הארי 🦁</p>
+  </div>
+</div>
 
+<script>
+(async function checkStatus() {
+  try {
+    const res = await fetch('status.txt?nocache=' + Date.now());
+    const text = (await res.text()).trim().toUpperCase();
+    if (text !== 'ON') {
+      document.getElementById('shabbatScreen').style.display = 'flex';
+      // הקפא את כל שאר האתר
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.getElementById('shabbatScreen').style.display = 'none';
+    }
+  } catch(e) {
+    // אם לא ניתן לקרוא את הקובץ - משאיר את האתר פתוח
+    console.warn('Could not read status.txt');
+  }
+})();
+</script>
 <!-- ══ EMERGENCY MODAL ══ -->
 <div id="modalEmergency" class="modal-backdrop">
   <div class="modal-bg"></div>
