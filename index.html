@@ -1,735 +1,559 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>מערכת מבזקים - ניהול פרופילים</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>שאגת הארי</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/all.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
-    body { font-family: 'Assistant', sans-serif; background-color: #f3f4f6; }
-    .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
-    .rich-editor:empty:before { content: attr(placeholder); color: #9ca3af; }
-    
-    .google-chat-card {
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 16px;
-        padding: 16px;
-        max-width: 500px;
-        width: 100%;
-        transition: all 0.3s ease;
-    }
-    .chat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-    }
-    .chat-title-area { text-align: right; flex-grow: 1; }
-    .chat-main-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
-    .chat-subtitle { font-size: 14px; color: #4b5563; }
-    .chat-logo { width: 45px; height: 45px; object-fit: contain; margin-right: 12px; border-radius: 50%; }
-    .chat-divider { border-top: 1px solid #f3f4f6; margin: 12px 0; }
-    .chat-body { font-size: 16px; line-height: 1.5; color: #374151; white-space: pre-wrap; }
-    
-    .profile-btn.active { border-color: #2563eb; background-color: #eff6ff; border-width: 2px; }
-
-    /* Animations */
-    .modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.9) translateY(30px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .editor-drag-over {
-        border-color: #2563eb !important;
-        background-color: #eff6ff !important;
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
-    }
-    .editor-drag-over::after {
-        content: '📸 שחרר להעלאה';
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        inset: 0;
-        background: rgba(239,246,255,0.92);
-        border-radius: 8px;
-        font-size: 18px;
-        font-weight: 700;
-        color: #2563eb;
-        pointer-events: none;
-    }
-    #editor { position: relative; }
-
-    /* Upload progress modal */
-    .upload-progress-bar {
-        height: 8px;
-        border-radius: 99px;
-        background: #e5e7eb;
-        overflow: hidden;
-        margin-top: 12px;
-    }
-    .upload-progress-fill {
-        height: 100%;
-        border-radius: 99px;
-        background: linear-gradient(90deg, #2563eb, #60a5fa);
-        transition: width 0.3s ease;
-        width: 0%;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Emoji&display=swap');
+    *{box-sizing:border-box}
+    body{font-family:'Assistant',sans-serif;background:#f0f4f8;min-height:100vh}
+    .emoji, h1{font-family:'Noto Emoji','Assistant',sans-serif}
+    .card{background:white;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+    .profile-btn{border:2px solid #e5e7eb;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;background:white;width:100%}
+    .profile-btn:hover{border-color:#93c5fd;background:#f0f9ff}
+    .profile-btn.active-news{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,0.12)}
+    .profile-btn.active-red{border-color:#dc2626;background:#fef2f2;box-shadow:0 0 0 3px rgba(220,38,38,0.12)}
+    .rich-editor{min-height:140px;padding:14px;border:2px solid #e5e7eb;border-radius:12px;outline:none;transition:border-color .2s,box-shadow .2s;font-size:15px;line-height:1.6}
+    .rich-editor:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+    .rich-editor:empty:before{content:attr(placeholder);color:#9ca3af}
+    .rich-editor.drag-over{border-color:#2563eb;background:#eff6ff}
+    .tb-btn{padding:6px 11px;border-radius:8px;border:1px solid #e5e7eb;background:white;cursor:pointer;font-size:13px;color:#374151;transition:all .15s;display:flex;align-items:center;gap:5px;font-family:'Assistant',sans-serif;font-weight:600}
+    .tb-btn:hover{background:#f3f4f6;border-color:#d1d5db}
+    .tb-btn.green{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+    .tb-btn.green:hover{background:#dcfce7}
+    .tb-btn.blue{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}
+    .tb-btn.blue:hover{background:#dbeafe}
+    .tb-btn.purple{background:#faf5ff;border-color:#e9d5ff;color:#7c3aed}
+    .tb-btn.purple:hover{background:#f3e8ff}
+    .tb-btn.orange{background:#fff7ed;border-color:#fed7aa;color:#ea580c}
+    .tb-btn.orange:hover{background:#ffedd5}
+    .input-field{border:2px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:14px;width:100%;outline:none;transition:border-color .2s;font-family:'Assistant',sans-serif}
+    .input-field:focus{border-color:#2563eb}
+    .send-btn{width:100%;padding:15px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;border:none;font-family:'Assistant',sans-serif}
+    .send-btn-news{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;box-shadow:0 4px 14px rgba(37,99,235,0.3)}
+    .send-btn-news:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
+    .send-btn-red{background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;box-shadow:0 4px 14px rgba(220,38,38,0.3)}
+    .send-btn-red:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(220,38,38,0.4)}
+    .tab-btn{padding:8px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;border:none;background:transparent;color:#6b7280;font-family:'Assistant',sans-serif}
+    .tab-btn.active{background:white;color:#1f2937;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+    .modal-backdrop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none}
+    .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .4s ease,backdrop-filter .4s ease}
+    .modal-box{background:white;border-radius:28px;padding:32px;max-width:360px;width:100%;position:relative;
+      box-shadow:0 40px 100px rgba(0,0,0,0.28),0 0 0 1px rgba(0,0,0,0.04);
+      opacity:0;transform:scale(.82) translateY(48px);
+      transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1)}
+    .modal-backdrop.open{pointer-events:all}
+    .modal-backdrop.open .modal-bg{background:rgba(10,10,20,0.62);backdrop-filter:blur(12px)}
+    .modal-backdrop.open .modal-box{opacity:1;transform:scale(1) translateY(0)}
+    .modal-backdrop.closing .modal-bg{background:rgba(0,0,0,0)!important;backdrop-filter:blur(0px)!important;transition-duration:.25s!important}
+    .modal-backdrop.closing .modal-box{opacity:0!important;transform:scale(.9) translateY(24px)!important;transition-duration:.25s!important}
+    .prog-bar{height:6px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin-top:12px}
+    .prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2563eb,#60a5fa);transition:width .3s}
+    .divider{border:none;border-top:1px solid #f3f4f6;margin:14px 0}
+    .section-label{font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+    .history-item{border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;background:#fafafa;transition:all .2s}
+    .history-item:hover{border-color:#93c5fd;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+    .webhook-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+    .webhook-url{font-size:11px;color:#6b7280;font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left}
+    /* Dropdown panel */
+    .dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;background:white;border:2px solid #e5e7eb;border-radius:16px;padding:16px;min-width:300px;box-shadow:0 8px 30px rgba(0,0,0,0.12);z-index:30;animation:popIn .2s ease forwards}
+    .dropdown-panel.open{display:block}
+    .dropdown-wrap{position:relative}
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:99px}
   </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-6">
 
-    <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black/60 backdrop-blur-md p-4">
-        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full card-shadow modal-enter text-center">
-            <div class="w-24 h-24 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl animate-pulse">
-                <i class="fas fa-bolt"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">רגע, זה חירום?</h3>
-            <p class="text-gray-500 mb-8 leading-relaxed">זיהינו מילות מפתח של "צבע אדום". האם תרצה לשלוח את זה תחת פרופיל החירום?</p>
-            
-            <div class="flex flex-col gap-3">
-                <button onclick="handleModalChoice('switch')" class="w-full bg-red-600 text-white font-bold py-4 rounded-2xl hover:bg-red-700 transition shadow-lg shadow-red-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-exchange-alt"></i> כן, החלף ושלח עכשיו
-                </button>
-                <button onclick="handleModalChoice('continue')" class="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-black transition shadow-lg">
-                    שלח כמבזק רגיל בכל זאת
-                </button>
-                <button onclick="handleModalChoice('cancel')" class="w-full py-3 text-gray-500 font-semibold hover:text-gray-800 transition mt-2">
-                    ביטול וחזרה לעריכה
-                </button>
-            </div>
-        </div>
+<!-- ══ EMERGENCY MODAL ══ -->
+<div id="modalEmergency" class="modal-backdrop">
+  <div class="modal-bg"></div>
+  <div class="modal-box text-center">
+    <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl"><i class="fas fa-bolt"></i></div>
+    <h3 class="text-2xl font-bold text-gray-800 mb-2">רגע, זה חירום?</h3>
+    <p class="text-gray-500 mb-7 text-sm leading-relaxed">זיהינו מילות חירום בטקסט. האם לשלוח תחת פרופיל <strong>צבע אדום</strong>?</p>
+    <div class="flex flex-col gap-3">
+      <button onclick="handleModal('switch')" class="w-full bg-red-600 text-white font-bold py-3.5 rounded-xl hover:bg-red-700 transition flex items-center justify-center gap-2"><i class="fas fa-exchange-alt"></i> כן, החלף לצבע אדום ושלח</button>
+      <button onclick="handleModal('continue')" class="w-full bg-gray-800 text-white font-bold py-3.5 rounded-xl hover:bg-black transition">שלח כמבזק רגיל</button>
+      <button onclick="handleModal('cancel')" class="w-full py-3 text-gray-400 font-semibold hover:text-gray-700 transition">ביטול</button>
     </div>
+  </div>
+</div>
 
-    <div id="statusOverlay" class="fixed inset-0 z-[60] flex items-center justify-center hidden bg-black/40 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[32px] p-8 max-w-xs w-full card-shadow modal-enter text-center">
-            <div id="statusIcon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                </div>
-            <h3 id="statusTitle" class="text-xl font-bold text-gray-800 mb-2">שולח...</h3>
-            <p id="statusDesc" class="text-gray-500 mb-6"></p>
-            <div id="countdownAction" class="hidden">
-                <button onclick="cancelSend()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-2xl hover:bg-red-100 transition border border-red-100">
-                    ביטול שליחה
-                </button>
-            </div>
-        </div>
+<!-- ══ STATUS MODAL ══ -->
+<div id="modalStatus" class="modal-backdrop">
+  <div class="modal-bg"></div>
+  <div class="modal-box text-center">
+    <div id="statusIcon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600"></div>
+    <h3 id="statusTitle" class="text-xl font-bold text-gray-800 mb-1"></h3>
+    <p id="statusDesc" class="text-gray-500 text-sm mb-5"></p>
+    <div id="statusProgWrap" class="prog-bar hidden"><div id="statusProgFill" class="prog-fill" style="width:0%"></div></div>
+    <div id="statusCancelWrap" class="hidden mt-4">
+      <button onclick="cancelSend()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 border border-red-100 transition"><i class="fas fa-times ml-1"></i> ביטול שליחה</button>
     </div>
+  </div>
+</div>
 
-    <input type="hidden" id="imgbbApiKey" value="74b5db34f7d743e270990275f1afd0ee">
-    <input type="hidden" id="googleClientId" value="856723702772-jm929ihp29ovhribfaaph17pbaq6qr3n.apps.googleusercontent.com">
+<input type="hidden" id="imgbbApiKey" value="74b5db34f7d743e270990275f1afd0ee">
+<input type="hidden" id="googleClientId" value="856723702772-jm929ihp29ovhribfaaph17pbaq6qr3n.apps.googleusercontent.com">
 
-    <div id="uploadProgressModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden bg-black/40 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-[32px] p-8 max-w-xs w-full card-shadow modal-enter text-center">
-            <div id="uploadModalIcon" class="w-20 h-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-4 text-3xl">
-                <i class="fas fa-cloud-upload-alt"></i>
-            </div>
-            <h3 id="uploadModalTitle" class="text-xl font-bold text-gray-800 mb-1">מעלה תמונה...</h3>
-            <p id="uploadModalDesc" class="text-gray-400 text-sm mb-2">אנא המתן</p>
-            <div class="upload-progress-bar">
-                <div id="uploadProgressFill" class="upload-progress-fill"></div>
-            </div>
+<!-- ══ HEADER ══ -->
+<div class="max-w-2xl mx-auto mb-5 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-800">🦁 שאגת הארי - שליחת עדכונים</h1>
+    <p class="text-sm text-gray-500 mt-0.5">שלח הודעות לקבוצות Google Chat</p>
+  </div>
+  <div class="bg-gray-100 rounded-xl p-1 flex gap-1">
+    <button class="tab-btn active" id="tab-compose" onclick="switchTab('compose')"><i class="fas fa-edit ml-1"></i>כתיבה</button>
+    <button class="tab-btn" id="tab-history" onclick="switchTab('history')"><i class="fas fa-history ml-1"></i>היסטוריה</button>
+  </div>
+</div>
+
+<!-- ══ COMPOSE TAB ══ -->
+<div id="tabCompose" class="max-w-2xl mx-auto space-y-4">
+
+  <!-- Profile -->
+  <div class="card p-5">
+    <div class="section-label">פרופיל שליחה</div>
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="setProfile('news')" id="btn-news" class="profile-btn active-news">
+        <img src="https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+        <div class="text-right">
+          <div class="font-bold text-sm text-gray-800">מבזק חדשות</div>
+          <div class="text-xs text-gray-400 mt-0.5" id="news-count">2 Webhooks</div>
         </div>
+      </button>
+      <button onclick="setProfile('red')" id="btn-red" class="profile-btn">
+        <img src="https://i.postimg.cc/ncKKRgq9/image.png" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+        <div class="text-right">
+          <div class="font-bold text-sm text-red-600">צבע אדום</div>
+          <div class="text-xs text-gray-400 mt-0.5" id="red-count">2 Webhooks</div>
+        </div>
+      </button>
     </div>
+  </div>
 
+  <!-- Editor -->
+  <div class="card p-5">
+    <div class="section-label">תוכן ההודעה</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div class="space-y-6">
-        <div class="bg-white p-6 rounded-2xl card-shadow">
-          <h2 class="text-lg font-bold mb-3 text-gray-700">בחר פרופיל שליחה:</h2>
-          <div class="grid grid-cols-2 gap-3 mb-6">
-              <button onclick="setProfile('news')" id="btn-news" class="profile-btn active border p-3 rounded-xl flex items-center gap-3 transition">
-                  <img src="https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" class="w-10 h-10 rounded-full border">
-                  <span class="font-bold text-sm">מבזק חדשות</span>
-              </button>
-              <button onclick="setProfile('red')" id="btn-red" class="profile-btn border p-3 rounded-xl flex items-center gap-3 transition">
-                  <img src="https://i.postimg.cc/ncKKRgq9/image.png" class="w-10 h-10 rounded-full border">
-                  <span class="font-bold text-sm text-red-600">צבע אדום</span>
-              </button>
+    <!-- Toolbar -->
+    <div class="flex flex-wrap gap-2 mb-3 pb-3 border-b border-gray-100 relative">
+      <button onclick="format('bold')" class="tb-btn" title="הדגשה"><i class="fas fa-bold"></i></button>
+      <button onclick="format('italic')" class="tb-btn" title="נטוי"><i class="fas fa-italic"></i></button>
+      <div class="w-px h-6 bg-gray-200 self-center mx-0.5"></div>
+      <button onclick="pasteFromClipboard()" class="tb-btn green"><i class="fas fa-clipboard"></i> הדבק</button>
+
+      <!-- Image dropdown -->
+      <div class="dropdown-wrap">
+        <button onclick="toggleDropdown('imgDropdown')" class="tb-btn blue"><i class="fas fa-image"></i> תמונה</button>
+        <div id="imgDropdown" class="dropdown-panel" style="min-width:280px">
+          <div class="text-xs font-bold text-gray-500 mb-3">הוסף תמונה</div>
+          <div class="mb-3">
+            <label class="text-xs text-gray-500 font-semibold block mb-1">כתובת URL</label>
+            <input type="text" id="newsImgUrl" placeholder="https://..." class="input-field text-sm" oninput="updateImgThumb()">
           </div>
-
-          <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 border-t pt-4">
-            <i class="fas fa-edit"></i> עריכת תוכן
-          </h2>
-          
-          <div class="mb-4">
-            <div class="flex flex-wrap gap-2 mb-2 border-b pb-2 items-center">
-                <button onclick="format('bold')" class="p-2 hover:bg-gray-100 rounded" title="הדגשה"><i class="fas fa-bold"></i></button>
-                <button onclick="format('italic')" class="p-2 hover:bg-gray-100 rounded" title="נטוי"><i class="fas fa-italic"></i></button>
-        
-                <div class="h-6 w-px bg-gray-300 mx-1"></div>
-                <button onclick="insertVideoText()" class="bg-red-50 text-red-600 text-xs font-bold px-3 py-1.5 rounded-full border border-red-200 hover:bg-red-100 transition">
-                    <i class="fas fa-video ml-1"></i> וידאו בשרשור
-                </button>
-            </div>
-            <div id="editor" class="rich-editor min-h-[120px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" contenteditable="true" placeholder="הקלד כאן... (או גרור תמונה/סרטון לכאן)" oninput="syncPreview()" ondragover="handleEditorDragOver(event)" ondragleave="handleEditorDragLeave(event)" ondrop="handleEditorDrop(event)"></div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label class="block text-sm font-semibold mb-1">תמונה:</label>
-              <div class="flex gap-2 items-center">
-                <input type="text" id="newsImgUrl" oninput="syncPreview()" placeholder="https://..." class="flex-1 border p-2 rounded-lg text-sm min-w-0">
-                <label id="uploadLabel" class="cursor-pointer bg-blue-100 text-blue-700 font-bold px-3 py-2 rounded-lg hover:bg-blue-200 transition text-sm flex items-center gap-1 whitespace-nowrap" title="העלה תמונה">
-                    <i id="uploadBtnIcon" class="fas fa-upload"></i>
-                    <span id="uploadBtnText">העלה</span>
-                    <input id="uploadBtn" type="file" accept="image/*" class="hidden" onchange="uploadImageToImgbb(this)">
-                </label>
-              </div>
-              <div id="uploadStatus" class="text-xs mt-1 hidden"></div>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">סרטון:</label>
-              <div class="flex gap-2 items-center">
-                <input type="text" id="videoUrl" oninput="syncPreview()" placeholder="קישור לסרטון..." class="flex-1 border p-2 rounded-lg text-sm min-w-0">
-                <label id="videoUploadLabel" class="cursor-pointer bg-purple-100 text-purple-700 font-bold px-3 py-2 rounded-lg hover:bg-purple-200 transition text-sm flex items-center gap-1 whitespace-nowrap" title="העלה סרטון">
-                    <i id="videoUploadIcon" class="fas fa-video"></i>
-                    <span id="videoUploadText">העלה</span>
-                    <input id="videoUploadInput" type="file" accept="video/*" class="hidden" onchange="uploadVideoToCatbox(this)">
-                </label>
-              </div>
-              <div id="videoUploadStatus" class="text-xs mt-1 text-gray-400">מעלה ישירות ל-Google Drive שלך</div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-semibold mb-1">כפתור פעולה:</label>
-                <div class="flex gap-1">
-                    <input type="text" id="btnText" placeholder="טקסט" class="w-1/2 border p-2 rounded-lg text-sm">
-                    <input type="text" id="btnUrl" placeholder="URL" class="w-1/2 border p-2 rounded-lg text-sm">
-                </div>
-                <button onclick="addButton()" class="w-full mt-2 bg-blue-100 text-blue-700 font-bold py-1 rounded-lg hover:bg-blue-200 transition">הוסף כפתור</button>
-            </div>
-          </div>
-
-          <div id="buttonsList" class="flex flex-wrap gap-2 mb-6"></div>
-
-          <div id="sendContainer" class="relative">
-            <button id="mainSendBtn" onclick="initiateSend()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg flex justify-center items-center gap-2">
-                <i class="fas fa-paper-plane"></i> שלח כעת
-            </button>
+          <label class="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-xl py-2.5 font-bold text-sm cursor-pointer hover:bg-blue-100 transition">
+            <i class="fas fa-upload"></i> העלה תמונה
+            <input type="file" accept="image/*" class="hidden" onchange="uploadImageFile(this.files[0]);this.value='';">
+          </label>
+          <div id="imgThumbWrap" class="mt-3 hidden">
+            <img id="imgThumb" class="w-full h-28 object-cover rounded-xl border border-gray-200">
+            <button onclick="clearImage()" class="text-xs text-red-500 mt-1 hover:underline"><i class="fas fa-times ml-1"></i>הסר</button>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col items-center">
-        <h2 class="text-gray-500 font-bold mb-4 uppercase tracking-wider text-sm">תצוגה מקדימה חיה</h2>
-        <div class="google-chat-card card-shadow">
-            <div class="chat-header">
-                <div class="chat-title-area">
-                    <div id="previewTitle" class="chat-main-title">מבזק חדשות</div>
-                    <div id="liveTime" class="chat-subtitle">נשלח ב: --:--</div>
-                </div>
-                <img id="previewLogo" src="https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" class="chat-logo">
-            </div>
-            <div class="chat-divider"></div>
-            <div class="chat-body" id="previewText">הקלד כאן...</div>
-            <img id="bodyImgPreview" class="w-full h-48 object-cover rounded-lg mt-3 hidden">
-            <div id="videoPreview" class="hidden mt-3 bg-gray-900 rounded-lg overflow-hidden">
-                <video id="bodyVideoPreview" class="w-full max-h-48 object-contain" controls></video>
-                <div class="px-3 py-2 flex items-center gap-2">
-                    <i class="fas fa-play-circle text-white text-sm"></i>
-                    <span class="text-white text-xs font-bold">▶ סרטון מצורף</span>
-                </div>
-            </div>
-            <div id="previewButtons" class="mt-4 flex flex-col gap-2"></div>
+      <!-- Video dropdown -->
+      <div class="dropdown-wrap">
+        <button onclick="toggleDropdown('vidDropdown')" class="tb-btn purple"><i class="fas fa-video"></i> סרטון</button>
+        <div id="vidDropdown" class="dropdown-panel" style="min-width:280px">
+          <div class="text-xs font-bold text-gray-500 mb-3">הוסף סרטון</div>
+          <div class="mb-3">
+            <label class="text-xs text-gray-500 font-semibold block mb-1">כתובת URL</label>
+            <input type="text" id="videoUrl" placeholder="קישור לסרטון..." class="input-field text-sm" oninput="updateVidInfo()">
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div>
+          </div>
+          <label class="w-full flex items-center justify-center gap-2 bg-purple-50 text-purple-600 border border-purple-200 rounded-xl py-2.5 font-bold text-sm cursor-pointer hover:bg-purple-100 transition">
+            <i class="fas fa-cloud-upload-alt"></i> העלה לGoogle Drive
+            <input type="file" accept="video/*" class="hidden" onchange="uploadVideoFile(this.files[0]);this.value='';">
+          </label>
+          <div id="vidInfoBadge" class="hidden mt-3 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-700 font-semibold">
+            <i class="fas fa-check-circle"></i><span id="vidInfoText">סרטון מצורף</span>
+            <button onclick="clearVideo()" class="mr-auto text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+          </div>
         </div>
       </div>
+
+      <!-- Action button dropdown -->
+      <div class="dropdown-wrap">
+        <button onclick="toggleDropdown('btnDropdown')" class="tb-btn orange"><i class="fas fa-mouse-pointer"></i> כפתור</button>
+        <div id="btnDropdown" class="dropdown-panel" style="min-width:280px">
+          <div class="text-xs font-bold text-gray-500 mb-3">הוסף כפתור פעולה</div>
+          <input type="text" id="btnText" placeholder="טקסט הכפתור" class="input-field text-sm mb-2">
+          <input type="text" id="btnUrl" placeholder="כתובת URL" class="input-field text-sm mb-3">
+          <button onclick="addButton()" class="w-full tb-btn orange justify-center py-2.5"><i class="fas fa-plus"></i> הוסף כפתור</button>
+          <div id="buttonsList" class="flex flex-wrap gap-2 mt-3"></div>
+        </div>
+      </div>
+
+      <button onclick="clearEditor()" class="tb-btn" style="margin-right:auto" title="נקה הכל"><i class="fas fa-trash-alt text-gray-400"></i></button>
     </div>
+
+    <!-- Editor -->
+    <div id="editor" class="rich-editor" contenteditable="true"
+         placeholder="הקלד כאן... (או גרור תמונה/סרטון לכאן)"
+         oninput="onEditorChange()"
+         ondragover="editorDragOver(event)"
+         ondragleave="editorDragLeave(event)"
+         ondrop="editorDrop(event)"></div>
+
+    <div class="flex justify-between mt-2 text-xs text-gray-400">
+      <span id="charCount">0 תווים</span>
+      <span id="keywordAlert" class="text-orange-500 font-semibold hidden"><i class="fas fa-exclamation-triangle ml-1"></i>זוהתה מילת חירום</span>
+    </div>
+  </div>
+
+  <!-- Send -->
+  <div>
+    <button id="sendBtn" onclick="initiateSend()" class="send-btn send-btn-news">
+      <i class="fas fa-paper-plane"></i> שלח כעת
+    </button>
+  </div>
+
+</div>
+
+<!-- ══ HISTORY TAB ══ -->
+<div id="tabHistory" class="max-w-2xl mx-auto hidden">
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div class="section-label mb-0">היסטוריית שליחות</div>
+      <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-600 font-semibold"><i class="fas fa-trash ml-1"></i>נקה הכל</button>
+    </div>
+    <div id="historyList" class="space-y-3">
+      <div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>
+    </div>
+  </div>
+</div>
 
 <script>
-    // הוובהוקים המעודכנים לכל פרופיל
-    const profiles = {
-        news: { 
-            title: "מבזק חדשות", 
-            logo: "https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png",
-            webhooks: [
-                "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
-                "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=yMlu8Oyx9HRkBeWGXCvkUtHjCr57EyyVKAm5CariuvI"
-            ]
-        },
-        red: { 
-            title: "צבע אדום", 
-            logo: "https://i.postimg.cc/ncKKRgq9/image.png",
-            webhooks: [
-                "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
-                "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IZg6yXQqGqRyXvBE26DX6t_E6IGJnKZoDokjzyjmY2E"
-            ]
-        }
-    };
+// ══ WEBHOOKS (hardcoded) ══════════════════════════════════════════════════════
+const webhooks = {
+  news: [
+    "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
+    "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=yMlu8Oyx9HRkBeWGXCvkUtHjCr57EyyVKAm5CariuvI"
+  ],
+  red: [
+    "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
+    "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IZg6yXQqGqRyXvBE26DX6t_E6IGJnKZoDokjzyjmY2E"
+  ]
+};
 
-    let currentProfile = 'news';
-    let buttons = [];
-    let countdownInterval = null;
+const PROFILES = {
+  news: { title:"מבזק חדשות", logo:"https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" },
+  red:  { title:"צבע אדום",   logo:"https://i.postimg.cc/ncKKRgq9/image.png" }
+};
+const EMERGENCY_KEYWORDS = ["צבע אדום","התרעה","התרעת חירום","אזעקה","מרחב מוגן","ירי רקטות","חדירת מחבלים","חשש לאירוע","נפילה"];
 
-    function setProfile(profileKey) {
-        currentProfile = profileKey;
-        document.querySelectorAll('.profile-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`btn-${profileKey}`).classList.add('active');
-        document.getElementById('previewTitle').textContent = profiles[profileKey].title;
-        document.getElementById('previewLogo').src = profiles[profileKey].logo;
-        document.getElementById('previewTitle').style.color = profileKey === 'red' ? '#dc2626' : '#1f2937';
-        syncPreview();
-    }
+let currentProfile = 'news';
+let buttons = [];
+let countdownTimer = null;
+let driveAccessToken = null;
+let driveFolderId = null;
+let history = JSON.parse(localStorage.getItem('msg_history') || '[]');
 
-    function format(cmd, val = null) { document.execCommand(cmd, false, val); syncPreview(); }
+// ── Init ──────────────────────────────────────────────────────────────────────
+function animateModalIn(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('closing','open');
+  void el.offsetWidth;
+  el.classList.add('open');
+}
+function animateModalOut(id) {
+  const el = document.getElementById(id);
+  el.classList.add('closing');
+  el.classList.remove('open');
+  setTimeout(() => el.classList.remove('closing'), 300);
+}
 
-    function insertVideoText() {
-        const editor = document.getElementById('editor');
-        editor.focus();
-        document.execCommand('insertHTML', false, '<br>וידאו בשרשור>>>');
-        syncPreview();
-    }
+function init() {
+  document.getElementById('news-count').textContent = webhooks.news.length + ' Webhooks';
+  document.getElementById('red-count').textContent  = webhooks.red.length  + ' Webhooks';
+  renderHistory();
+  // Close dropdowns on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns();
+  });
+}
 
-    function getCurrentTime() {
-        const now = new Date();
-        return now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-    }
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['compose','history'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==tab);
+  });
+  if (tab==='history') renderHistory();
+}
 
-    function syncPreview() {
-        const content = document.getElementById('editor').innerHTML;
-        document.getElementById('previewText').innerHTML = content || "הקלד כאן...";
-        const imgUrl = document.getElementById('newsImgUrl').value;
-        const imgEl = document.getElementById('bodyImgPreview');
-        if(imgUrl) { imgEl.src = imgUrl; imgEl.classList.remove('hidden'); }
-        else { imgEl.classList.add('hidden'); }
+// ── Profile ───────────────────────────────────────────────────────────────────
+function setProfile(key) {
+  currentProfile = key;
+  ['news','red'].forEach(k => {
+    document.getElementById('btn-'+k).className = 'profile-btn' + (k===key ? (k==='news' ? ' active-news' : ' active-red') : '');
+  });
+  const sb = document.getElementById('sendBtn');
+  sb.className = 'send-btn send-btn-' + key;
+  sb.innerHTML = `<i class="fas fa-paper-plane"></i> שלח כ${key==='news'?'מבזק חדשות':'צבע אדום'}`;
+}
 
-        const videoUrl = document.getElementById('videoUrl').value;
-        const videoWrap = document.getElementById('videoPreview');
-        const videoEl = document.getElementById('bodyVideoPreview');
-        if (videoUrl) {
-            videoEl.src = videoUrl;
-            videoWrap.classList.remove('hidden');
-        } else {
-            videoWrap.classList.add('hidden');
-            videoEl.src = '';
-        }
+// ── Dropdowns ─────────────────────────────────────────────────────────────────
+function toggleDropdown(id) {
+  const el = document.getElementById(id);
+  const wasOpen = el.classList.contains('open');
+  closeAllDropdowns();
+  if (!wasOpen) el.classList.add('open');
+}
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-panel').forEach(el => el.classList.remove('open'));
+}
 
-        document.getElementById('liveTime').textContent = "נשלח ב: " + getCurrentTime();
-    }
+// ── Editor ────────────────────────────────────────────────────────────────────
+function format(cmd) { document.execCommand(cmd, false, null); }
+function clearEditor() { document.getElementById('editor').innerHTML=''; onEditorChange(); }
 
-    function addButton() {
-        const text = document.getElementById('btnText').value;
-        const url = document.getElementById('btnUrl').value;
-        if (text && url) {
-            buttons.push({ id: Date.now(), text, url });
-            document.getElementById('btnText').value = '';
-            document.getElementById('btnUrl').value = '';
-            renderButtons();
-        }
-    }
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) { document.getElementById('editor').focus(); document.execCommand('insertText',false,text); onEditorChange(); }
+  } catch(e) { document.getElementById('editor').focus(); showToast('לחץ Ctrl+V להדבקה','info'); }
+}
 
-    function removeButton(id) {
-        buttons = buttons.filter(b => b.id !== id);
-        renderButtons();
-    }
+function onEditorChange() {
+  const text = document.getElementById('editor').innerText;
+  document.getElementById('charCount').textContent = text.length + ' תווים';
+  const hasKw = EMERGENCY_KEYWORDS.some(w => text.includes(w));
+  document.getElementById('keywordAlert').classList.toggle('hidden', !hasKw);
+}
 
-    function renderButtons() {
-        document.getElementById('buttonsList').innerHTML = buttons.map(b => `
-            <div class="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-full text-xs">
-                <span>${b.text}</span>
-                <button onclick="removeButton(${b.id})" class="text-red-500"><i class="fas fa-times"></i></button>
-            </div>
-        `).join('');
-        document.getElementById('previewButtons').innerHTML = buttons.map(b => `
-            <div class="w-full text-center py-2 border border-blue-200 rounded-lg text-sm font-bold text-blue-700 bg-blue-50">${b.text}</div>
-        `).join('');
-    }
+function editorDragOver(e) { e.preventDefault(); const hasFile=[...(e.dataTransfer.items||[])].some(i=>i.kind==='file'); if(hasFile){e.dataTransfer.dropEffect='copy';e.currentTarget.classList.add('drag-over');} }
+function editorDragLeave(e) { if(!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over'); }
+function editorDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); const files=[...(e.dataTransfer.files||[])]; const img=files.find(f=>f.type.startsWith('image/')); const vid=files.find(f=>f.type.startsWith('video/')); if(img) uploadImageFile(img); else if(vid) uploadVideoFile(vid); }
 
-    function initiateSend() {
-        const content = document.getElementById('editor').innerText;
-        const emergencyKeywords = ["צבע אדום", "התרעה", "התרעת חירום", "אזעקה", "מרחב מוגן", "ירי רקטות", "חדירת מחבלים", "חשש לאירוע", "נפילה"];
-        const hasKeyword = emergencyKeywords.some(word => content.includes(word));
+// ── Image ─────────────────────────────────────────────────────────────────────
+function updateImgThumb() {
+  const url = document.getElementById('newsImgUrl').value.trim();
+  const wrap = document.getElementById('imgThumbWrap');
+  if (url) { document.getElementById('imgThumb').src=url; wrap.classList.remove('hidden'); }
+  else wrap.classList.add('hidden');
+}
+function clearImage() { document.getElementById('newsImgUrl').value=''; document.getElementById('imgThumbWrap').classList.add('hidden'); }
 
-        if (currentProfile === 'news' && hasKeyword) {
-            document.getElementById('customModal').classList.remove('hidden');
-            return;
-        }
+// ── Video ─────────────────────────────────────────────────────────────────────
+function updateVidInfo() {
+  const url = document.getElementById('videoUrl').value.trim();
+  const badge = document.getElementById('vidInfoBadge');
+  if (url) { document.getElementById('vidInfoText').textContent = url.length>50 ? url.substring(0,50)+'...' : url; badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
+}
+function clearVideo() { document.getElementById('videoUrl').value=''; document.getElementById('vidInfoBadge').classList.add('hidden'); }
 
-        if (currentProfile === 'red' && !hasKeyword) {
-            showPrettyStatus("שגיאה", "נא להוסיף מילות חירום", "bg-red-100 text-red-600", "fa-times-circle");
-            setTimeout(hidePrettyStatus, 2000);
-            return; 
-        }
+// ── Action buttons ────────────────────────────────────────────────────────────
+function addButton() {
+  const text = document.getElementById('btnText').value.trim();
+  const url  = document.getElementById('btnUrl').value.trim();
+  if (!text || !url) return;
+  buttons.push({id:Date.now(),text,url});
+  document.getElementById('btnText').value='';
+  document.getElementById('btnUrl').value='';
+  renderButtons();
+}
+function removeButton(id) { buttons=buttons.filter(b=>b.id!==id); renderButtons(); }
+function renderButtons() {
+  document.getElementById('buttonsList').innerHTML = buttons.map(b => `
+    <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl text-sm">
+      <i class="fas fa-mouse-pointer text-orange-400 text-xs"></i>
+      <span class="font-semibold text-orange-700">${b.text}</span>
+      <button onclick="removeButton(${b.id})" class="text-red-400 hover:text-red-600 mr-auto"><i class="fas fa-times text-xs"></i></button>
+    </div>
+  `).join('');
+}
 
-        startCountdown();
-    }
+// ── Send flow ─────────────────────────────────────────────────────────────────
+function initiateSend() {
+  const text = document.getElementById('editor').innerText.trim();
+  if (!text && !document.getElementById('newsImgUrl').value) { showToast('הודעה ריקה','error'); return; }
+  closeAllDropdowns();
+  const hasKw = EMERGENCY_KEYWORDS.some(w => text.includes(w));
+  if (currentProfile==='news' && hasKw) { animateModalIn('modalEmergency'); return; }
+  startCountdown();
+}
+function handleModal(choice) {
+  animateModalOut('modalEmergency');
+  if (choice==='switch') { setProfile('red'); startCountdown(); }
+  else if (choice==='continue') startCountdown();
+}
+function startCountdown() {
+  let t=2; const n=webhooks[currentProfile].length;
+  showStatus('fas fa-clock','מכין שליחה...',`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`,true,false,0);
+  countdownTimer=setInterval(()=>{ t--; if(t>0){document.getElementById('statusDesc').textContent=`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`;}else{clearInterval(countdownTimer);document.getElementById('statusCancelWrap').classList.add('hidden');executeActualSend();}},1000);
+}
+function cancelSend() { clearInterval(countdownTimer); hideStatus(); showToast('השליחה בוטלה','info'); }
 
-    function handleModalChoice(choice) {
-        document.getElementById('customModal').classList.add('hidden');
-        if (choice === 'switch') {
-            setProfile('red');
-            startCountdown();
-        } else if (choice === 'continue') {
-            startCountdown();
-        }
-    }
+async function executeActualSend() {
+  const n = webhooks[currentProfile].length;
+  updateStatus('fas fa-spinner fa-spin','שולח...',`שולח ל-${n} קבוצות`,'bg-blue-100 text-blue-600',false,50);
+  const content  = document.getElementById('editor').innerHTML;
+  const imgUrl   = document.getElementById('newsImgUrl').value.trim();
+  const videoUrl = document.getElementById('videoUrl').value.trim();
+  const sendTime = new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  const profile  = PROFILES[currentProfile];
+  let text = content.replace(/<div>/g,'\n').replace(/<\/div>/g,'').replace(/<br>/g,'\n').replace(/&nbsp;/g,' ');
+  const widgets = [{textParagraph:{text}}];
+  if (imgUrl)   widgets.push({image:{imageUrl:imgUrl}});
+  if (videoUrl) widgets.push({buttonList:{buttons:[{text:'▶ צפה בסרטון',onClick:{openLink:{url:videoUrl}},color:{red:0.29,green:0.14,blue:0.69,alpha:1}}]}});
+  if (buttons.length) widgets.push({buttonList:{buttons:buttons.map(b=>({text:b.text,onClick:{openLink:{url:b.url}}}))}});
+  const payload={cardsV2:[{card:{header:{title:profile.title,subtitle:"נשלח ב: "+sendTime,imageUrl:profile.logo,imageType:"CIRCLE"},sections:[{widgets}]}}]};
+  try {
+    const results=await Promise.all(webhooks[currentProfile].map(url=>fetch(url,{method:'POST',body:JSON.stringify(payload)})));
+    if (!results.every(r=>r.ok)) throw new Error('חלק מהשליחות נכשלו');
+    addToHistory(currentProfile,document.getElementById('editor').innerText.trim().substring(0,120),imgUrl,videoUrl,n);
+    updateStatus('fas fa-check-double','נשלח בהצלחה!',`פורסם ב-${n} קבוצות`,'bg-green-100 text-green-600',false,100);
+    document.getElementById('editor').innerHTML=''; clearImage(); clearVideo(); buttons=[]; renderButtons(); onEditorChange();
+    setTimeout(hideStatus,2200);
+  } catch(e) {
+    updateStatus('fas fa-exclamation-triangle','שגיאה בשליחה',e.message,'bg-red-100 text-red-600',false,0);
+    setTimeout(hideStatus,3000);
+  }
+}
 
-    function startCountdown() {
-        const overlay = document.getElementById('statusOverlay');
-        const title = document.getElementById('statusTitle');
-        const desc = document.getElementById('statusDesc');
-        const iconWrap = document.getElementById('statusIcon');
-        const action = document.getElementById('countdownAction');
+// ── Status modal ──────────────────────────────────────────────────────────────
+function showStatus(icon,title,desc,showCancel,showProg,prog) {
+  animateModalIn('modalStatus');
+  document.getElementById('statusTitle').textContent=title;
+  document.getElementById('statusDesc').textContent=desc;
+  document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);
+  document.getElementById('statusProgWrap').classList.toggle('hidden',!showProg);
+  document.getElementById('statusProgFill').style.width=prog+'%';
+  const iw=document.getElementById('statusIcon');
+  iw.className='w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600';
+  iw.innerHTML=`<i class="${icon}"></i>`;
+}
+function updateStatus(iconClass,title,desc,colorClass,showCancel,prog) {
+  document.getElementById('statusTitle').textContent=title;
+  document.getElementById('statusDesc').textContent=desc;
+  document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);
+  document.getElementById('statusProgFill').style.width=prog+'%';
+  const iw=document.getElementById('statusIcon');
+  iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
+  iw.innerHTML=`<i class="${iconClass}"></i>`;
+}
+function hideStatus() { animateModalOut('modalStatus'); }
 
-        overlay.classList.remove('hidden');
-        action.classList.remove('hidden');
-        iconWrap.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600";
-        iconWrap.innerHTML = '<i class="fas fa-clock animate-spin"></i>';
-        
-        let timeLeft = 2;
-        title.textContent = "מכין שליחה...";
-        desc.textContent = `ההודעה תישלח בעוד ${timeLeft} שניות ל-2 קבוצות`;
+// ── Image upload ──────────────────────────────────────────────────────────────
+async function uploadImageFile(file) {
+  const apiKey=document.getElementById('imgbbApiKey').value.trim();
+  if(!apiKey||!file) return;
+  showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);
+  try {
+    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','bg-blue-100 text-blue-600',false,60);
+    const form=new FormData(); form.append('key',apiKey); form.append('image',base64);
+    const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+    const data=await res.json();
+    if(data.success){ document.getElementById('newsImgUrl').value=data.data.url; updateImgThumb(); updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','bg-green-100 text-green-600',false,100); setTimeout(hideStatus,1800); }
+    else throw new Error(data.error?.message||'שגיאה');
+  } catch(e){ updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); }
+}
 
-        countdownInterval = setInterval(() => {
-            timeLeft--;
-            if (timeLeft > 0) {
-                desc.textContent = `ההודעה תישלח בעוד ${timeLeft} שניות ל-2 קבוצות`;
-            } else {
-                clearInterval(countdownInterval);
-                action.classList.add('hidden');
-                executeActualSend();
-            }
-        }, 1000);
-    }
+// ── Video upload (Google Drive) ───────────────────────────────────────────────
+async function uploadVideoFile(file) {
+  if(!file) return;
+  showStatus('fab fa-google','מתחבר ל-Drive...','נא אשר גישה','bg-blue-100 text-blue-600',false,5);
+  let token;
+  try { token=await getDriveToken(); } catch(e){ updateStatus('fas fa-times-circle','שגיאת כניסה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); return; }
+  updateStatus('fas fa-folder-open','מאתר תיקייה...','סרטוני מבזק','bg-blue-100 text-blue-600',false,20);
+  let folderId;
+  try { folderId=await getOrCreateFolder(token); } catch(e){ updateStatus('fas fa-times-circle','שגיאת תיקייה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); return; }
+  updateStatus('fas fa-cloud-upload-alt','מעלה לDrive...',file.name,'bg-blue-100 text-blue-600',false,50);
+  try {
+    const metadata={name:file.name,mimeType:file.type,parents:[folderId]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',file);
+    const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});
+    if(!res.ok) throw new Error('שגיאת העלאה: '+res.status);
+    const {id}=await res.json();
+    document.getElementById('videoUrl').value=`https://drive.google.com/file/d/${id}/view`;
+    updateVidInfo();
+    updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','bg-green-100 text-green-600',false,100);
+    setTimeout(hideStatus,2500);
+  } catch(e){ updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); }
+}
+function getDriveToken() {
+  return new Promise((resolve,reject)=>{
+    if(driveAccessToken){resolve(driveAccessToken);return;}
+    const clientId=document.getElementById('googleClientId').value.trim();
+    const client=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.file',callback:(resp)=>{if(resp.error){reject(new Error(resp.error));return;}driveAccessToken=resp.access_token;resolve(driveAccessToken);}});
+    client.requestAccessToken();
+  });
+}
+async function getOrCreateFolder(token) {
+  if(driveFolderId) return driveFolderId;
+  const sr=await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'%D7%A1%D7%A8%D7%98%D7%95%D7%A0%D7%99+%D7%9E%D7%91%D7%96%D7%A7'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});
+  if(sr.ok){const d=await sr.json();if(d.files&&d.files.length>0){driveFolderId=d.files[0].id;return driveFolderId;}}
+  const fr=await fetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:'סרטוני מבזק',mimeType:'application/vnd.google-apps.folder'})});
+  if(!fr.ok) throw new Error('שגיאה ביצירת תיקייה: '+fr.status);
+  const f=await fr.json(); driveFolderId=f.id; return driveFolderId;
+}
 
-    function cancelSend() {
-        clearInterval(countdownInterval);
-        hidePrettyStatus();
-        showPrettyStatus("בוטל", "השליחה נעצרה", "bg-gray-100 text-gray-600", "fa-undo");
-        setTimeout(hidePrettyStatus, 1500);
-    }
+// ── History ───────────────────────────────────────────────────────────────────
+function addToHistory(profile,text,imgUrl,videoUrl,groupCount) {
+  history.unshift({id:Date.now(),profile,text:text||'(ללא טקסט)',imgUrl,videoUrl,groupCount,time:new Date().toLocaleString('he-IL')});
+  if(history.length>50) history.pop();
+  localStorage.setItem('msg_history',JSON.stringify(history));
+}
+function renderHistory() {
+  const c=document.getElementById('historyList');
+  if(!history.length){c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;return;}
+  c.innerHTML=history.map(e=>`
+    <div class="history-item">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-700 leading-relaxed">${e.text}</p>
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${e.profile==='news'?'bg-blue-50 text-blue-600 border border-blue-200':'bg-red-50 text-red-600 border border-red-200'}">${e.profile==='news'?'מבזק חדשות':'צבע אדום'}</span>
+            <span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>
+            ${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}
+            ${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}
+          </div>
+        </div>
+        <div class="text-xs text-gray-400 whitespace-nowrap">${e.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+function clearHistory() { if(!confirm('למחוק את כל ההיסטוריה?')) return; history=[]; localStorage.setItem('msg_history','[]'); renderHistory(); }
 
-    async function executeActualSend() {
-        const title = document.getElementById('statusTitle');
-        const desc = document.getElementById('statusDesc');
-        const iconWrap = document.getElementById('statusIcon');
-        
-        title.textContent = "שולח כעת...";
-        desc.textContent = "שולח ל-2 הוובהוקים במקביל...";
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg,type='info') {
+  const colors={info:'bg-gray-800',error:'bg-red-600',success:'bg-green-600'};
+  const t=document.createElement('div');
+  t.className=`fixed bottom-6 left-1/2 -translate-x-1/2 ${colors[type]} text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl z-[100]`;
+  t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2500);
+}
 
-        const content = document.getElementById('editor').innerHTML;
-        const imgUrl = document.getElementById('newsImgUrl').value;
-        const videoUrl = document.getElementById('videoUrl').value;
-        const sendTime = getCurrentTime();
-        const profile = profiles[currentProfile];
-        
-        let formattedText = content.replace(/<div>/g, '\n').replace(/<\/div>/g, '').replace(/<br>/g, '\n').replace(/&nbsp;/g, ' ');
-
-        const widgets = [{ textParagraph: { text: formattedText } }];
-        if(imgUrl) { widgets.push({ image: { imageUrl: imgUrl } }); }
-        if(videoUrl) {
-            widgets.push({ buttonList: { buttons: [{ text: '▶ צפה בסרטון', onClick: { openLink: { url: videoUrl } }, color: { red: 0.29, green: 0.14, blue: 0.69, alpha: 1 } }] } });
-        }
-        if(buttons.length > 0) {
-            widgets.push({ buttonList: { buttons: buttons.map(b => ({ text: b.text, onClick: { openLink: { url: b.url } } })) } });
-        }
-
-        const payload = { 
-            cardsV2: [{ 
-                card: { 
-                    header: { 
-                        title: profile.title, 
-                        subtitle: "נשלח ב: " + sendTime, 
-                        imageUrl: profile.logo, 
-                        imageType: "CIRCLE" 
-                    },
-                    sections: [{ widgets }] 
-                } 
-            }] 
-        };
-
-        try {
-            // שליחה לכל הוובהוקים במקביל
-            const sendPromises = profile.webhooks.map(url => 
-                fetch(url, { method: 'POST', body: JSON.stringify(payload) })
-            );
-
-            const results = await Promise.all(sendPromises);
-            const allOk = results.every(res => res.ok);
-
-            if (allOk) { 
-                iconWrap.className = "w-20 h-20 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 text-3xl";
-                iconWrap.innerHTML = '<i class="fas fa-check-double"></i>';
-                title.textContent = "נשלח בהצלחה!";
-                desc.textContent = "ההודעה פורסמה ב-2 קבוצות היעד";
-                
-                document.getElementById('editor').innerHTML = "";
-                document.getElementById('newsImgUrl').value = "";
-                document.getElementById('videoUrl').value = "";
-                buttons = [];
-                renderButtons();
-                syncPreview();
-                
-                setTimeout(hidePrettyStatus, 2500);
-            } else {
-                throw new Error("חלק מהשליחות נכשלו");
-            }
-        } catch (e) { 
-            showPrettyStatus("שגיאה", "תקלה בשליחה לאחד או יותר מהוובהוקים", "bg-red-100 text-red-600", "fa-wifi");
-            setTimeout(hidePrettyStatus, 3000);
-        }
-    }
-
-    function showPrettyStatus(title, message, colorClass, icon) {
-        const overlay = document.getElementById('statusOverlay');
-        const titleEl = document.getElementById('statusTitle');
-        const descEl = document.getElementById('statusDesc');
-        const iconWrap = document.getElementById('statusIcon');
-        const action = document.getElementById('countdownAction');
-
-        overlay.classList.remove('hidden');
-        action.classList.add('hidden');
-        iconWrap.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
-        iconWrap.innerHTML = `<i class="fas ${icon}"></i>`;
-        titleEl.textContent = title;
-        descEl.textContent = message;
-    }
-
-    function hidePrettyStatus() {
-        document.getElementById('statusOverlay').classList.add('hidden');
-    }
-
-    // ── Upload modal helpers (uses statusOverlay) ─────────────────────
-    function showUploadModal(title, desc, progress, iconClass, iconColor) {
-        const overlay = document.getElementById('statusOverlay');
-        document.getElementById('statusTitle').textContent = title;
-        document.getElementById('statusDesc').textContent = desc;
-        document.getElementById('countdownAction').classList.add('hidden');
-        const iconWrap = document.getElementById('statusIcon');
-        iconWrap.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${iconColor}`;
-        iconWrap.innerHTML = `<i class="${iconClass}"></i>`;
-
-        // progress bar
-        let bar = document.getElementById('uploadInlineBar');
-        if (!bar) {
-            bar = document.createElement('div');
-            bar.id = 'uploadInlineBar';
-            bar.className = 'upload-progress-bar mt-2';
-            bar.innerHTML = '<div id="uploadInlineFill" class="upload-progress-fill"></div>';
-            overlay.querySelector('.bg-white').appendChild(bar);
-        }
-        bar.style.display = progress >= 0 ? 'block' : 'none';
-        document.getElementById('uploadInlineFill').style.width = progress + '%';
-        overlay.classList.remove('hidden');
-    }
-    function hideUploadModal() {
-        document.getElementById('statusOverlay').classList.add('hidden');
-        const bar = document.getElementById('uploadInlineBar');
-        if (bar) { bar.style.display = 'none'; document.getElementById('uploadInlineFill').style.width = '0%'; }
-    }
-
-    // ── Drag & drop on editor ─────────────────────────────────────────
-    function handleEditorDragOver(e) {
-        e.preventDefault();
-        const hasMedia = [...(e.dataTransfer.items || [])].some(i => i.kind === 'file' && (i.type.startsWith('image/') || i.type.startsWith('video/')));
-        if (hasMedia) {
-            e.dataTransfer.dropEffect = 'copy';
-            e.currentTarget.classList.add('editor-drag-over');
-        }
-    }
-    function handleEditorDragLeave(e) {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-            e.currentTarget.classList.remove('editor-drag-over');
-        }
-    }
-    function handleEditorDrop(e) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('editor-drag-over');
-        const files = [...(e.dataTransfer.files || [])];
-        const imgFile = files.find(f => f.type.startsWith('image/'));
-        const vidFile = files.find(f => f.type.startsWith('video/'));
-        if (imgFile) uploadImageFile(imgFile);
-        else if (vidFile) uploadVideoFile(vidFile);
-    }
-
-    // ── Upload from file input (image) ────────────────────────────────
-    async function uploadImageToImgbb(input) {
-        const file = input.files[0];
-        if (!file) return;
-        input.value = '';
-        await uploadImageFile(file);
-    }
-
-    // ── Upload from file input (video) ────────────────────────────────
-    async function uploadVideoToCatbox(input) {
-        const file = input.files[0];
-        if (!file) return;
-        input.value = '';
-        await uploadVideoFile(file);
-    }
-
-    // ── Google Drive upload ───────────────────────────────────────────
-    let driveAccessToken = null;
-    let driveFolderId = null; // תיקייה ייעודית לסרטונים – נוצרת פעם אחת לסשן
-
-    function getDriveToken() {
-        return new Promise((resolve, reject) => {
-            if (driveAccessToken) { resolve(driveAccessToken); return; }
-            const clientId = document.getElementById('googleClientId').value.trim();
-            if (!clientId || clientId === 'YOUR_CLIENT_ID_HERE') {
-                reject(new Error('נא להגדיר Google Client ID בקובץ'));
-                return;
-            }
-            const client = google.accounts.oauth2.initTokenClient({
-                client_id: clientId,
-                scope: 'https://www.googleapis.com/auth/drive.file',
-                callback: (resp) => {
-                    if (resp.error) { reject(new Error(resp.error)); return; }
-                    driveAccessToken = resp.access_token;
-                    resolve(driveAccessToken);
-                }
-            });
-            client.requestAccessToken();
-        });
-    }
-
-    // מחזיר ID של תיקיית "סרטוני מבזק" – מוצא קיימת או יוצר חדשה
-    async function getOrCreateFolder(token) {
-        if (driveFolderId) return driveFolderId;
-
-        // חיפוש תיקייה קיימת שנוצרה ע"י האפליקציה
-        const searchRes = await fetch(
-            `https://www.googleapis.com/drive/v3/files?q=name%3D'%D7%A1%D7%A8%D7%98%D7%95%D7%A0%D7%99+%D7%9E%D7%91%D7%96%D7%A7'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (searchRes.ok) {
-            const searchData = await searchRes.json();
-            if (searchData.files && searchData.files.length > 0) {
-                driveFolderId = searchData.files[0].id;
-                return driveFolderId;
-            }
-        }
-
-        // יצירת תיקייה חדשה
-        const folderRes = await fetch(
-            'https://www.googleapis.com/drive/v3/files?fields=id',
-            {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'סרטוני מבזק', mimeType: 'application/vnd.google-apps.folder' })
-            }
-        );
-        if (!folderRes.ok) throw new Error(`שגיאה ביצירת תיקייה: ${folderRes.status}`);
-        const folder = await folderRes.json();
-        driveFolderId = folder.id;
-        return driveFolderId;
-    }
-
-    async function uploadVideoFile(file) {
-        const maxMB = 1024;
-        if (file.size > maxMB * 1024 * 1024) {
-            showUploadModal('קובץ גדול מדי', `המקסימום הוא ${maxMB}MB`, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 2500);
-            return;
-        }
-
-        showUploadModal('מחבר ל-Google...', 'נא אשר גישה בחלון שנפתח', 5, 'fab fa-google', 'bg-blue-100 text-blue-600');
-
-        let token;
-        try {
-            token = await getDriveToken();
-        } catch (e) {
-            showUploadModal('שגיאת כניסה', e.message, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 3000);
-            return;
-        }
-
-        showUploadModal('מכין תיקייה...', 'מאתר תיקיית "סרטוני מבזק"', 10, 'fas fa-folder-open', 'bg-blue-100 text-blue-600');
-
-        let folderId;
-        try {
-            folderId = await getOrCreateFolder(token);
-        } catch (e) {
-            showUploadModal('שגיאת תיקייה', e.message, 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 3000);
-            return;
-        }
-
-        showUploadModal('מעלה לDrive...', file.name, 30, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
-
-        try {
-            // 1. העלאת הקובץ לתוך התיקייה הייעודית
-            const metadata = { name: file.name, mimeType: file.type, parents: [folderId] };
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', file);
-
-            const uploadRes = await fetch(
-                'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
-                { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
-            );
-            if (!uploadRes.ok) throw new Error(`שגיאת העלאה: ${uploadRes.status}`);
-            const { id } = await uploadRes.json();
-
-            const viewUrl = `https://drive.google.com/file/d/${id}/view`;
-            document.getElementById('videoUrl').value = viewUrl;
-            syncPreview();
-            showUploadModal(
-                'הועלה בהצלחה! 🎉',
-                `הסרטון נשמר בתיקיית "סרטוני מבזק" ב-Drive`,
-                100, 'fas fa-check-double', 'bg-green-100 text-green-600'
-            );
-            setTimeout(hideUploadModal, 3000);
-
-        } catch (e) {
-            if (e.message.includes('401')) { driveAccessToken = null; driveFolderId = null; }
-            showUploadModal('העלאה נכשלה', e.message, 0, 'fas fa-wifi', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 3000);
-        }
-    }
-
-    // ── Core upload logic ─────────────────────────────────────────────
-    async function uploadImageFile(file) {
-        const apiKey = document.getElementById('imgbbApiKey').value.trim();
-
-        if (!apiKey) {
-            showUploadModal('שגיאה', 'מפתח API חסר', 0, 'fas fa-times-circle', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 2000);
-            return;
-        }
-
-        showUploadModal('מכין תמונה...', file.name, 10, 'fas fa-image', 'bg-blue-100 text-blue-600');
-
-        try {
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-
-            showUploadModal('מעלה לשרת...', 'שולח לimgbb', 50, 'fas fa-cloud-upload-alt animate-bounce', 'bg-blue-100 text-blue-600');
-
-            const formData = new FormData();
-            formData.append('key', apiKey);
-            formData.append('image', base64);
-
-            const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
-
-            showUploadModal('מעבד תגובה...', 'כמעט סיימנו', 85, 'fas fa-cog fa-spin', 'bg-blue-100 text-blue-600');
-
-            const data = await res.json();
-
-            if (data.success) {
-                document.getElementById('newsImgUrl').value = data.data.url;
-                syncPreview();
-                showUploadModal('הועלה בהצלחה!', data.data.url.substring(0, 40) + '...', 100, 'fas fa-check-double', 'bg-green-100 text-green-600');
-                setTimeout(hideUploadModal, 2000);
-            } else {
-                throw new Error(data.error?.message || 'שגיאה לא ידועה');
-            }
-        } catch (e) {
-            showUploadModal('העלאה נכשלה', e.message, 0, 'fas fa-wifi', 'bg-red-100 text-red-600');
-            setTimeout(hideUploadModal, 3000);
-        }
-    }
-
-    syncPreview();
+init();
 </script>
 </body>
 </html>
