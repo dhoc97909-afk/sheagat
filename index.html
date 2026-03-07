@@ -53,23 +53,18 @@
       background:#fafafa;border:1px solid #e5e7eb;border-radius:14px;
       padding:12px;animation:slideIn .4s cubic-bezier(.16,1,.3,1);
     }
-    .alert-card.new-alert{border-color:#fca5a5;background:#fff5f5;animation:alertPop .4s cubic-bezier(.16,1,.3,1)}
+    .alert-card.new-alert{border-color:#bfdbfe;background:#eff6ff;animation:alertPop .4s cubic-bezier(.16,1,.3,1)}
     @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
     @keyframes alertPop{
-      0%{opacity:0;transform:scale(.94);box-shadow:0 0 0 0 rgba(239,68,68,0.3)}
-      60%{box-shadow:0 0 0 10px rgba(239,68,68,0)}
+      0%{opacity:0;transform:scale(.94);box-shadow:0 0 0 0 rgba(37,99,235,0.25)}
+      60%{box-shadow:0 0 0 10px rgba(37,99,235,0)}
       100%{opacity:1;transform:scale(1)}
     }
     .alert-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
-      background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;
+      background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:99px;
       padding:2px 8px;margin-bottom:7px}
-    .alert-title{font-size:13px;font-weight:700;color:#1f2937;margin-bottom:3px}
-    .alert-zones{font-size:12px;color:#4b5563;line-height:1.5;margin-bottom:5px}
+    .alert-title{font-size:13px;font-weight:600;color:#1f2937;line-height:1.5;margin-bottom:5px}
     .alert-time{font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:4px}
-    .alert-cities-toggle{font-size:11px;color:#2563eb;cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:6px;width:fit-content}
-    .alert-cities-toggle:hover{color:#1d4ed8}
-    .alert-cities-list{font-size:11px;color:#6b7280;margin-top:5px;display:none;line-height:1.8;padding-right:4px}
-    .alert-cities-list.open{display:block}
 
     /* ── Main content ── */
     #mainContent{flex:1;overflow-y:auto;padding:20px 24px}
@@ -125,22 +120,22 @@
 </head>
 <body>
 
-<!-- ══ ALERT SIDEBAR ══ -->
+<!-- ══ ADMIN UPDATES SIDEBAR ══ -->
 <div id="alertSidebar">
   <div class="sidebar-header">
     <div class="sidebar-title">
-      <i class="fas fa-shield-alt" style="color:#ef4444;font-size:14px"></i>
-      צבע אדום — זמן אמת
+      <i class="fas fa-bell" style="color:#2563eb;font-size:13px"></i>
+      עדכוני מנהל
     </div>
     <div style="display:flex;align-items:center;gap:6px">
       <div class="conn-dot" id="connDot"></div>
-      <span class="conn-label" id="connLabel">מנותק</span>
+      <span class="conn-label" id="connLabel">טוען...</span>
     </div>
   </div>
   <div class="alerts-list" id="alertsList">
     <div class="alert-empty">
-      <i class="fas fa-satellite-dish"></i>
-      <p>ממתין להתראות<br>מפיקוד העורף</p>
+      <i class="fas fa-inbox"></i>
+      <p>אין עדכונים עדיין</p>
     </div>
   </div>
 </div>
@@ -357,82 +352,82 @@ let driveAccessToken = null;
 let driveFolderId = null;
 let msgHistory = JSON.parse(localStorage.getItem('msg_history') || '[]');
 
-// ══ SSE — חיבור לבוט ══
-const SSE_URL = 'http://localhost:8080/events';
-let sseAlerts = [];
-let sseConnected = false;
+// ══ עדכוני מנהל — polling מ-updates.txt ══
+const UPDATES_FILE = 'updates.txt';
+const POLL_INTERVAL = 15000;
+let knownLines = null; // null = טרם נטען
+let adminUpdates = [];
 
-function initSSE() {
+async function pollUpdates() {
   try {
-    const es = new EventSource(SSE_URL);
+    const res = await fetch(UPDATES_FILE + '?t=' + Date.now());
+    if (!res.ok) throw new Error('not found');
+    const text = await res.text();
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-    es.onopen = () => {
-      sseConnected = true;
-      document.getElementById('connDot').classList.add('connected');
-      document.getElementById('connLabel').textContent = 'מחובר';
-      document.getElementById('connLabel').classList.add('connected');
-    };
-
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.type === 'connected') return;
-        if (data.type === 'alert') {
-          addAlertToSidebar(data, true);
-        }
-      } catch {}
-    };
-
-    es.onerror = () => {
-      sseConnected = false;
-      document.getElementById('connDot').classList.remove('connected');
-      document.getElementById('connLabel').textContent = 'מנותק';
-      document.getElementById('connLabel').classList.remove('connected');
-      es.close();
-      setTimeout(initSSE, 5000);
-    };
+    if (knownLines === null) {
+      // טעינה ראשונה — הצג את כל השורות
+      knownLines = new Set(lines.map((l,i) => i + '::' + l));
+      lines.forEach(line => {
+        adminUpdates.push({ text: line, time: now() });
+      });
+      setConnected(true);
+      renderUpdates();
+    } else {
+      // בדיקה אם יש שורות חדשות (שורות שלא ראינו)
+      const newLines = lines.filter((l, i) => !knownLines.has(i + '::' + l));
+      if (newLines.length > 0) {
+        newLines.forEach(line => {
+          knownLines.add(lines.indexOf(line) + '::' + line);
+          adminUpdates.unshift({ text: line, time: now(), isNew: true });
+        });
+        renderUpdates();
+      }
+      setConnected(true);
+    }
   } catch(e) {
-    setTimeout(initSSE, 5000);
+    setConnected(false);
+  }
+  setTimeout(pollUpdates, POLL_INTERVAL);
+}
+
+function now() {
+  return new Date().toLocaleString('he-IL', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+function setConnected(ok) {
+  const dot = document.getElementById('connDot');
+  const lbl = document.getElementById('connLabel');
+  if (ok) {
+    dot.classList.add('connected');
+    lbl.textContent = 'מעודכן';
+    lbl.classList.add('connected');
+  } else {
+    dot.classList.remove('connected');
+    lbl.textContent = 'לא נמצא';
+    lbl.classList.remove('connected');
   }
 }
 
-function addAlertToSidebar(alert, isNew = false) {
-  sseAlerts.unshift(alert);
-  renderAlerts();
-}
-
-function renderAlerts() {
+function renderUpdates() {
   const list = document.getElementById('alertsList');
-  if (!sseAlerts.length) {
-    list.innerHTML = `<div class="alert-empty"><i class="fas fa-satellite-dish"></i><p>ממתין להתראות<br>מפיקוד העורף</p></div>`;
+  if (!adminUpdates.length) {
+    list.innerHTML = `<div class="alert-empty"><i class="fas fa-inbox"></i><p>אין עדכונים עדיין</p></div>`;
     return;
   }
-  list.innerHTML = sseAlerts.map((a, i) => {
-    const citiesId = 'cities-' + i;
-    const citiesHtml = (a.cities || []).map(c => `• ${c}`).join('<br>');
-    return `
-      <div class="alert-card ${i === 0 ? 'new-alert' : ''}">
-        <div class="alert-badge"><i class="fas fa-siren-on" style="font-size:9px"></i> התראה פעילה</div>
-        <div class="alert-title">🚨 ${a.title || 'צבע אדום'}</div>
-        <div class="alert-zones">📍 ${(a.zones || []).join(', ') || 'לא ידוע'}</div>
-        ${a.desc ? `<div style="font-size:11px;color:#64748b;margin-bottom:4px">ℹ️ ${a.desc}</div>` : ''}
-        <div class="alert-time"><i class="fas fa-clock" style="font-size:9px"></i> ${a.date} ${a.time}</div>
-        ${citiesHtml ? `
-          <div class="alert-cities-toggle" onclick="toggleCities('${citiesId}', this)">
-            <i class="fas fa-chevron-left" style="font-size:9px"></i> רשימת יישובים
-          </div>
-          <div class="alert-cities-list" id="${citiesId}">${citiesHtml}</div>
-        ` : ''}
-      </div>
-    `;
-  }).join('');
-}
-
-function toggleCities(id, btn) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-  const icon = btn.querySelector('i');
-  icon.style.transform = el.classList.contains('open') ? 'rotate(-90deg)' : '';
+  // הוסף חדשים בלי לאפס את כל הרשימה
+  list.innerHTML = adminUpdates.map((u, i) => `
+    <div class="alert-card ${u.isNew && i === 0 ? 'new-alert' : ''}">
+      <div class="alert-badge"><i class="fas fa-user-shield" style="font-size:9px"></i> עדכון מנהל</div>
+      <div class="alert-title">${u.text}</div>
+      <div class="alert-time"><i class="fas fa-clock" style="font-size:9px"></i> ${u.time}</div>
+    </div>
+  `).join('');
+  // הסר סימון "חדש" אחרי שנייה
+  setTimeout(() => { adminUpdates.forEach(u => u.isNew = false); }, 1000);
 }
 
 // ══ Modals ══
@@ -445,7 +440,7 @@ function init() {
   renderGroupsList();
   renderHistory();
   document.addEventListener('click', e => { if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns(); });
-  initSSE();
+  pollUpdates();
 }
 
 function renderGroupsList() {
