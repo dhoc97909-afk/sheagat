@@ -189,6 +189,7 @@
   <div class="bg-gray-100 rounded-xl p-1 flex gap-1">
     <button class="tab-btn active" id="tab-compose" onclick="switchTab('compose')"><i class="fas fa-edit ml-1"></i>כתיבה</button>
     <button class="tab-btn" id="tab-history" onclick="switchTab('history')"><i class="fas fa-history ml-1"></i>היסטוריה</button>
+    <button class="tab-btn" id="tab-groups" onclick="switchTab('groups')"><i class="fas fa-layer-group ml-1"></i>קבוצות</button>
   </div>
 </div>
 
@@ -300,19 +301,48 @@
   </div>
 </div>
 
+<!-- GROUPS TAB -->
+<div id="tabGroups" class="max-w-2xl mx-auto hidden">
+  <div class="card p-5">
+    <div class="section-label mb-4">5 קבוצות מחוברות</div>
+    <div class="space-y-3" id="groupsList"></div>
+  </div>
+</div>
+
 </div><!-- end mainContent -->
 
 <script>
 // ══ WEBHOOKS ══
+const GROUPS = [
+  {
+    name: "שאגת הארי - עדכונים",
+    news: "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=a-hU9RlL6luYlpwqQa0aALnLv5zscJVJuDQsIFTN-Ww",
+    red:  "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=PYjiKwQIa_Bba4r6z1GNhVeY8d4PHDkXX2FioLshmTM"
+  },
+  {
+    name: "שאגת הארי - עדכונים 2",
+    news: "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=0IsavE-7n1IqwiJCj6kzyBAiDxeTUCpplfnDeqqrpXM",
+    red:  "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=XSYzDVnnjogvRb5sGtEyOFqit27exBbes9AB0NahAG8"
+  },
+  {
+    name: "שאגת הארי - עדכונים 3",
+    news: "https://chat.googleapis.com/v1/spaces/AAQAkM4XDNU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=PAI0uA9ePyGWD7wmj-Em0_Hg50IlGCMqDgyWFbuBAMY",
+    red:  "https://chat.googleapis.com/v1/spaces/AAQAkM4XDNU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=fT2bUfpZYK0WOjT2Q2KmGv0Ef7awtuMI_ZosDL7Nk0k"
+  },
+  {
+    name: "שאגת הארי - עדכונים 4",
+    news: "https://chat.googleapis.com/v1/spaces/AAQA2ZgN8EU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=y4Urz6YmmcaeCTygKNtxkl6ZESGwI5eXLP0nIjqGaHk",
+    red:  "https://chat.googleapis.com/v1/spaces/AAQA2ZgN8EU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=_K_n_ZIqUHLQ3OY-nCQzvh80yAgBzcQMxlRLYA5dNuo"
+  },
+  {
+    name: "שאגת הארי - עדכונים 5",
+    news: "https://chat.googleapis.com/v1/spaces/AAQA2kXSw_o/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=MKdVwUsMFVCnsS78F14cYuSWxWM-atMNJNkO9ClUM8U",
+    red:  "https://chat.googleapis.com/v1/spaces/AAQA2kXSw_o/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=xMPl2mA36v7oSId4cqL3icZbySJjLffgFeJl9HInV5I"
+  }
+];
 const webhooks = {
-  news: [
-    "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
-    "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=yMlu8Oyx9HRkBeWGXCvkUtHjCr57EyyVKAm5CariuvI"
-  ],
-  red: [
-    "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
-    "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IZg6yXQqGqRyXvBE26DX6t_E6IGJnKZoDokjzyjmY2E"
-  ]
+  news: GROUPS.map(g => g.news),
+  red:  GROUPS.map(g => g.red)
 };
 const PROFILES = {
   news: { title:"מבזק חדשות", logo:"https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" },
@@ -410,20 +440,42 @@ function animateModalIn(id) { const el=document.getElementById(id); el.classList
 function animateModalOut(id) { const el=document.getElementById(id); el.classList.add('closing'); el.classList.remove('open'); setTimeout(()=>el.classList.remove('closing'),300); }
 
 function init() {
-  document.getElementById('news-count').textContent = webhooks.news.length + ' Webhooks';
-  document.getElementById('red-count').textContent  = webhooks.red.length  + ' Webhooks';
+  document.getElementById('news-count').textContent = GROUPS.length + ' Webhooks';
+  document.getElementById('red-count').textContent  = GROUPS.length + ' Webhooks';
+  renderGroupsList();
   renderHistory();
   document.addEventListener('click', e => { if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns(); });
   initSSE();
 }
 
+function renderGroupsList() {
+  document.getElementById('groupsList').innerHTML = GROUPS.map((g, i) => `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px">
+      <div style="font-size:13px;font-weight:700;color:#1f2937;margin-bottom:6px">
+        <i class="fas fa-users" style="color:#6b7280;font-size:11px;margin-left:5px"></i>${g.name}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:700;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:99px;padding:1px 7px">מבזק</span>
+          <span style="font-size:10px;color:#9ca3af;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;flex:1">${g.news.split('token=')[1]?.substring(0,20)}...</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:700;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;padding:1px 7px">אדום</span>
+          <span style="font-size:10px;color:#9ca3af;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;flex:1">${g.red.split('token=')[1]?.substring(0,20)}...</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 // ══ Tabs ══
 function switchTab(tab) {
-  ['compose','history'].forEach(t => {
+  ['compose','history','groups'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('hidden', t!==tab);
   });
   if (tab==='history') renderHistory();
+  if (tab==='groups') renderGroupsList();
 }
 
 // ══ Profile ══
