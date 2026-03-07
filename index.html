@@ -116,6 +116,60 @@
     ::-webkit-scrollbar{width:5px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:99px}
+
+    /* ══ ICON ANIMATIONS ══ */
+    @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes bounce-in {
+      0%  { transform: scale(0) rotate(-20deg); opacity:0 }
+      60% { transform: scale(1.25) rotate(5deg); opacity:1 }
+      80% { transform: scale(0.92) rotate(-2deg) }
+      100%{ transform: scale(1) rotate(0deg) }
+    }
+    @keyframes check-pop {
+      0%  { transform: scale(0); opacity:0 }
+      50% { transform: scale(1.4); opacity:1 }
+      70% { transform: scale(0.88) }
+      85% { transform: scale(1.08) }
+      100%{ transform: scale(1) }
+    }
+    @keyframes shake {
+      0%,100%{ transform:translateX(0) }
+      20%    { transform:translateX(-6px) rotate(-3deg) }
+      40%    { transform:translateX(6px) rotate(3deg) }
+      60%    { transform:translateX(-4px) rotate(-2deg) }
+      80%    { transform:translateX(4px) rotate(2deg) }
+    }
+    @keyframes float-cloud {
+      0%,100%{ transform:translateY(0) }
+      40%    { transform:translateY(-7px) }
+      70%    { transform:translateY(-3px) }
+    }
+    @keyframes clock-tick {
+      0%,100%{ transform:scale(1) }
+      50%    { transform:scale(1.12) }
+    }
+    @keyframes dots-pulse {
+      0%,80%,100%{ transform:scale(0.6); opacity:0.4 }
+      40%         { transform:scale(1);   opacity:1 }
+    }
+    .anim-spin    { animation: spin-slow 1.2s linear infinite }
+    .anim-bounce  { animation: bounce-in .55s cubic-bezier(.16,1,.3,1) forwards }
+    .anim-check   { animation: check-pop .5s cubic-bezier(.34,1.56,.64,1) forwards }
+    .anim-shake   { animation: shake .5s ease forwards }
+    .anim-cloud   { animation: float-cloud 1.4s ease-in-out infinite }
+    .anim-tick    { animation: clock-tick .8s ease-in-out infinite }
+
+    /* Loading dots */
+    .loading-dots { display:inline-flex; gap:4px; align-items:center; margin-top:6px }
+    .loading-dots span {
+      width:6px; height:6px; border-radius:50%; background:currentColor;
+      animation: dots-pulse 1.2s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2){ animation-delay:.2s }
+    .loading-dots span:nth-child(3){ animation-delay:.4s }
+
+    /* Status icon wrapper */
+    #statusIcon { transition: background .3s, color .3s }
   </style>
 </head>
 <body>
@@ -539,9 +593,55 @@ async function executeActualSend(){
 }
 
 // ══ Status modal ══
-function showStatus(icon,title,desc,showCancel,showProg,prog){animateModalIn('modalStatus');document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgWrap').classList.toggle('hidden',!showProg);document.getElementById('statusProgFill').style.width=prog+'%';const iw=document.getElementById('statusIcon');iw.className='w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600';iw.innerHTML=`<i class="${icon}"></i>`;}
-function updateStatus(iconClass,title,desc,colorClass,showCancel,prog){document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgFill').style.width=prog+'%';const iw=document.getElementById('statusIcon');iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;iw.innerHTML=`<i class="${iconClass}"></i>`;}
-function hideStatus(){animateModalOut('modalStatus');}
+const STATUS_CONFIG = {
+  'fas fa-clock':              { anim:'anim-tick',  color:'bg-blue-100 text-blue-500' },
+  'fas fa-spinner fa-spin':    { anim:'anim-spin',  color:'bg-blue-100 text-blue-500' },
+  'fas fa-cloud-upload-alt':   { anim:'anim-cloud', color:'bg-blue-100 text-blue-500' },
+  'fas fa-folder-open':        { anim:'anim-bounce',color:'bg-yellow-100 text-yellow-500' },
+  'fab fa-google':             { anim:'anim-bounce',color:'bg-blue-100 text-blue-500' },
+  'fas fa-image':              { anim:'anim-bounce',color:'bg-purple-100 text-purple-500' },
+  'fas fa-check-double':       { anim:'anim-check', color:'bg-green-100 text-green-500' },
+  'fas fa-exclamation-triangle':{ anim:'anim-shake',color:'bg-red-100 text-red-500' },
+  'fas fa-times-circle':       { anim:'anim-shake', color:'bg-red-100 text-red-500' },
+};
+
+function getIconHtml(iconClass) {
+  const cfg = STATUS_CONFIG[iconClass] || { anim:'anim-bounce', color:'bg-blue-100 text-blue-500' };
+  const isSuccess = iconClass.includes('check');
+  const isLoading = iconClass.includes('spinner') || iconClass.includes('clock');
+  const dotsHtml = isLoading
+    ? `<div class="loading-dots" style="position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);color:#93c5fd"><span></span><span></span><span></span></div>`
+    : '';
+  return { iconHtml: `<i class="${iconClass} ${cfg.anim}" style="position:relative"></i>${dotsHtml}`, colorClass: cfg.color };
+}
+
+function showStatus(icon, title, desc, showCancel, showProg, prog) {
+  animateModalIn('modalStatus');
+  document.getElementById('statusTitle').textContent = title;
+  document.getElementById('statusDesc').textContent = desc;
+  document.getElementById('statusCancelWrap').classList.toggle('hidden', !showCancel);
+  document.getElementById('statusProgWrap').classList.toggle('hidden', !showProg);
+  document.getElementById('statusProgFill').style.width = prog + '%';
+  const { iconHtml, colorClass } = getIconHtml(icon);
+  const iw = document.getElementById('statusIcon');
+  iw.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
+  iw.style.position = 'relative';
+  iw.innerHTML = iconHtml;
+}
+
+function updateStatus(iconClass, title, desc, colorClass, showCancel, prog) {
+  document.getElementById('statusTitle').textContent = title;
+  document.getElementById('statusDesc').textContent = desc;
+  document.getElementById('statusCancelWrap').classList.toggle('hidden', !showCancel);
+  document.getElementById('statusProgFill').style.width = prog + '%';
+  const { iconHtml, colorClass: autoColor } = getIconHtml(iconClass);
+  const iw = document.getElementById('statusIcon');
+  iw.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${autoColor}`;
+  iw.style.position = 'relative';
+  iw.innerHTML = iconHtml;
+}
+
+function hideStatus() { animateModalOut('modalStatus'); }
 
 // ══ Image upload ══
 async function uploadImageFile(file){const apiKey=document.getElementById('imgbbApiKey').value.trim();if(!apiKey||!file)return;showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);try{const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','bg-blue-100 text-blue-600',false,60);const form=new FormData();form.append('key',apiKey);form.append('image',base64);const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});const data=await res.json();if(data.success){document.getElementById('newsImgUrl').value=data.data.url;updateImgThumb();updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','bg-green-100 text-green-600',false,100);setTimeout(hideStatus,1800);}else throw new Error(data.error?.message||'שגיאה');}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);}}
