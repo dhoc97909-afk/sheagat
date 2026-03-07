@@ -11,9 +11,69 @@
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Noto+Emoji&display=swap');
     *{box-sizing:border-box}
-    body{font-family:'Assistant',sans-serif;background:#f0f4f8;min-height:100vh}
-    .emoji, h1{font-family:'Noto Emoji','Assistant',sans-serif}
+    body{font-family:'Assistant',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;flex-direction:row-reverse;gap:0;align-items:stretch}
+    .emoji,h1{font-family:'Noto Emoji','Assistant',sans-serif}
     .card{background:white;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+
+    /* ── Alert Sidebar ── */
+    #alertSidebar{
+      width:300px;min-width:300px;
+      margin:16px 16px 16px 16px;
+      background:white;
+      border-radius:20px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.08);
+      border:1px solid #e5e7eb;
+      display:flex;flex-direction:column;
+      overflow:hidden;
+      height:calc(100vh - 32px);
+      position:sticky;top:16px;
+    }
+    .sidebar-header{
+      padding:14px 18px;
+      border-bottom:1px solid #f1f5f9;
+      display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+      background:white;border-radius:20px 20px 0 0;
+    }
+    .sidebar-title{font-size:13px;font-weight:700;color:#1f2937;display:flex;align-items:center;gap:8px}
+    .conn-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;transition:background .3s;flex-shrink:0}
+    .conn-dot.connected{background:#22c55e;animation:pulse-green 2s infinite}
+    .conn-label{font-size:11px;font-weight:600;color:#9ca3af;transition:color .3s}
+    .conn-label.connected{color:#16a34a}
+    @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+    .alerts-list{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+    .alerts-list::-webkit-scrollbar{width:4px}
+    .alerts-list::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:99px}
+
+    .alert-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#9ca3af;text-align:center;padding:32px;gap:10px}
+    .alert-empty i{font-size:28px;opacity:0.35}
+    .alert-empty p{font-size:12px;line-height:1.6}
+
+    .alert-card{
+      background:#fafafa;border:1px solid #e5e7eb;border-radius:14px;
+      padding:12px;animation:slideIn .4s cubic-bezier(.16,1,.3,1);
+    }
+    .alert-card.new-alert{border-color:#fca5a5;background:#fff5f5;animation:alertPop .4s cubic-bezier(.16,1,.3,1)}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes alertPop{
+      0%{opacity:0;transform:scale(.94);box-shadow:0 0 0 0 rgba(239,68,68,0.3)}
+      60%{box-shadow:0 0 0 10px rgba(239,68,68,0)}
+      100%{opacity:1;transform:scale(1)}
+    }
+    .alert-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+      background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;
+      padding:2px 8px;margin-bottom:7px}
+    .alert-title{font-size:13px;font-weight:700;color:#1f2937;margin-bottom:3px}
+    .alert-zones{font-size:12px;color:#4b5563;line-height:1.5;margin-bottom:5px}
+    .alert-time{font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:4px}
+    .alert-cities-toggle{font-size:11px;color:#2563eb;cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:6px;width:fit-content}
+    .alert-cities-toggle:hover{color:#1d4ed8}
+    .alert-cities-list{font-size:11px;color:#6b7280;margin-top:5px;display:none;line-height:1.8;padding-right:4px}
+    .alert-cities-list.open{display:block}
+
+    /* ── Main content ── */
+    #mainContent{flex:1;overflow-y:auto;padding:20px 24px}
+
     .profile-btn{border:2px solid #e5e7eb;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;background:white;width:100%}
     .profile-btn:hover{border-color:#93c5fd;background:#f0f9ff}
     .profile-btn.active-news{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,0.12)}
@@ -43,10 +103,7 @@
     .tab-btn.active{background:white;color:#1f2937;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
     .modal-backdrop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none}
     .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .4s ease,backdrop-filter .4s ease}
-    .modal-box{background:white;border-radius:28px;padding:32px;max-width:360px;width:100%;position:relative;
-      box-shadow:0 40px 100px rgba(0,0,0,0.28),0 0 0 1px rgba(0,0,0,0.04);
-      opacity:0;transform:scale(.82) translateY(48px);
-      transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1)}
+    .modal-box{background:white;border-radius:28px;padding:32px;max-width:360px;width:100%;position:relative;box-shadow:0 40px 100px rgba(0,0,0,0.28),0 0 0 1px rgba(0,0,0,0.04);opacity:0;transform:scale(.82) translateY(48px);transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1)}
     .modal-backdrop.open{pointer-events:all}
     .modal-backdrop.open .modal-bg{background:rgba(10,10,20,0.62);backdrop-filter:blur(12px)}
     .modal-backdrop.open .modal-box{opacity:1;transform:scale(1) translateY(0)}
@@ -58,10 +115,7 @@
     .section-label{font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
     .history-item{border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;background:#fafafa;transition:all .2s}
     .history-item:hover{border-color:#93c5fd;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-    .webhook-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px}
-    .webhook-url{font-size:11px;color:#6b7280;font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left}
-    /* Dropdown panel */
-    .dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;background:white;border:2px solid #e5e7eb;border-radius:16px;padding:16px;min-width:300px;box-shadow:0 8px 30px rgba(0,0,0,0.12);z-index:30;animation:popIn .2s ease forwards}
+    .dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;background:white;border:2px solid #e5e7eb;border-radius:16px;padding:16px;min-width:300px;box-shadow:0 8px 30px rgba(0,0,0,0.12);z-index:30}
     .dropdown-panel.open{display:block}
     .dropdown-wrap{position:relative}
     ::-webkit-scrollbar{width:5px}
@@ -69,9 +123,32 @@
     ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:99px}
   </style>
 </head>
-<body class="p-4 md:p-6">
+<body>
 
-<!-- ══ EMERGENCY MODAL ══ -->
+<!-- ══ ALERT SIDEBAR ══ -->
+<div id="alertSidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">
+      <i class="fas fa-shield-alt" style="color:#ef4444;font-size:14px"></i>
+      צבע אדום — זמן אמת
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="conn-dot" id="connDot"></div>
+      <span class="conn-label" id="connLabel">מנותק</span>
+    </div>
+  </div>
+  <div class="alerts-list" id="alertsList">
+    <div class="alert-empty">
+      <i class="fas fa-satellite-dish"></i>
+      <p>ממתין להתראות<br>מפיקוד העורף</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<div id="mainContent">
+
+<!-- EMERGENCY MODAL -->
 <div id="modalEmergency" class="modal-backdrop">
   <div class="modal-bg"></div>
   <div class="modal-box text-center">
@@ -86,7 +163,7 @@
   </div>
 </div>
 
-<!-- ══ STATUS MODAL ══ -->
+<!-- STATUS MODAL -->
 <div id="modalStatus" class="modal-backdrop">
   <div class="modal-bg"></div>
   <div class="modal-box text-center">
@@ -103,7 +180,7 @@
 <input type="hidden" id="imgbbApiKey" value="74b5db34f7d743e270990275f1afd0ee">
 <input type="hidden" id="googleClientId" value="856723702772-jm929ihp29ovhribfaaph17pbaq6qr3n.apps.googleusercontent.com">
 
-<!-- ══ HEADER ══ -->
+<!-- HEADER -->
 <div class="max-w-2xl mx-auto mb-5 flex items-center justify-between">
   <div>
     <h1 class="text-2xl font-bold text-gray-800">🦁 שאגת הארי - שליחת עדכונים</h1>
@@ -115,10 +192,8 @@
   </div>
 </div>
 
-<!-- ══ COMPOSE TAB ══ -->
+<!-- COMPOSE TAB -->
 <div id="tabCompose" class="max-w-2xl mx-auto space-y-4">
-
-  <!-- Profile -->
   <div class="card p-5">
     <div class="section-label">פרופיל שליחה</div>
     <div class="grid grid-cols-2 gap-3">
@@ -139,18 +214,13 @@
     </div>
   </div>
 
-  <!-- Editor -->
   <div class="card p-5">
     <div class="section-label">תוכן ההודעה</div>
-
-    <!-- Toolbar -->
     <div class="flex flex-wrap gap-2 mb-3 pb-3 border-b border-gray-100 relative">
       <button onclick="format('bold')" class="tb-btn" title="הדגשה"><i class="fas fa-bold"></i></button>
       <button onclick="format('italic')" class="tb-btn" title="נטוי"><i class="fas fa-italic"></i></button>
       <div class="w-px h-6 bg-gray-200 self-center mx-0.5"></div>
       <button onclick="pasteFromClipboard()" class="tb-btn green"><i class="fas fa-clipboard"></i> הדבק</button>
-
-      <!-- Image dropdown -->
       <div class="dropdown-wrap">
         <button onclick="toggleDropdown('imgDropdown')" class="tb-btn blue"><i class="fas fa-image"></i> תמונה</button>
         <div id="imgDropdown" class="dropdown-panel" style="min-width:280px">
@@ -159,9 +229,7 @@
             <label class="text-xs text-gray-500 font-semibold block mb-1">כתובת URL</label>
             <input type="text" id="newsImgUrl" placeholder="https://..." class="input-field text-sm" oninput="updateImgThumb()">
           </div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div>
-          </div>
+          <div class="flex items-center gap-2 mb-3"><div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div></div>
           <label class="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-xl py-2.5 font-bold text-sm cursor-pointer hover:bg-blue-100 transition">
             <i class="fas fa-upload"></i> העלה תמונה
             <input type="file" accept="image/*" class="hidden" onchange="uploadImageFile(this.files[0]);this.value='';">
@@ -172,19 +240,12 @@
           </div>
         </div>
       </div>
-
-      <!-- Video dropdown -->
       <div class="dropdown-wrap">
         <button onclick="toggleDropdown('vidDropdown')" class="tb-btn purple"><i class="fas fa-video"></i> סרטון</button>
         <div id="vidDropdown" class="dropdown-panel" style="min-width:280px">
           <div class="text-xs font-bold text-gray-500 mb-3">הוסף סרטון</div>
-          <div class="mb-3">
-            <label class="text-xs text-gray-500 font-semibold block mb-1">כתובת URL</label>
-            <input type="text" id="videoUrl" placeholder="קישור לסרטון..." class="input-field text-sm" oninput="updateVidInfo()">
-          </div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div>
-          </div>
+          <input type="text" id="videoUrl" placeholder="קישור לסרטון..." class="input-field text-sm mb-3" oninput="updateVidInfo()">
+          <div class="flex items-center gap-2 mb-3"><div class="flex-1 h-px bg-gray-200"></div><span class="text-xs text-gray-400">או</span><div class="flex-1 h-px bg-gray-200"></div></div>
           <label class="w-full flex items-center justify-center gap-2 bg-purple-50 text-purple-600 border border-purple-200 rounded-xl py-2.5 font-bold text-sm cursor-pointer hover:bg-purple-100 transition">
             <i class="fas fa-cloud-upload-alt"></i> העלה לGoogle Drive
             <input type="file" accept="video/*" class="hidden" onchange="uploadVideoFile(this.files[0]);this.value='';">
@@ -195,8 +256,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Action button dropdown -->
       <div class="dropdown-wrap">
         <button onclick="toggleDropdown('btnDropdown')" class="tb-btn orange"><i class="fas fa-mouse-pointer"></i> כפתור</button>
         <div id="btnDropdown" class="dropdown-panel" style="min-width:280px">
@@ -207,34 +266,28 @@
           <div id="buttonsList" class="flex flex-wrap gap-2 mt-3"></div>
         </div>
       </div>
-
       <button onclick="clearEditor()" class="tb-btn" style="margin-right:auto" title="נקה הכל"><i class="fas fa-trash-alt text-gray-400"></i></button>
     </div>
-
-    <!-- Editor -->
     <div id="editor" class="rich-editor" contenteditable="true"
-         placeholder="הקלד כאן... (או גרור תמונה/סרטון לכאן)"
+         placeholder="הקלד כאן..."
          oninput="onEditorChange()"
          ondragover="editorDragOver(event)"
          ondragleave="editorDragLeave(event)"
          ondrop="editorDrop(event)"></div>
-
     <div class="flex justify-between mt-2 text-xs text-gray-400">
       <span id="charCount">0 תווים</span>
       <span id="keywordAlert" class="text-orange-500 font-semibold hidden"><i class="fas fa-exclamation-triangle ml-1"></i>זוהתה מילת חירום</span>
     </div>
   </div>
 
-  <!-- Send -->
   <div>
     <button id="sendBtn" onclick="initiateSend()" class="send-btn send-btn-news">
       <i class="fas fa-paper-plane"></i> שלח כעת
     </button>
   </div>
-
 </div>
 
-<!-- ══ HISTORY TAB ══ -->
+<!-- HISTORY TAB -->
 <div id="tabHistory" class="max-w-2xl mx-auto hidden">
   <div class="card p-5">
     <div class="flex items-center justify-between mb-4">
@@ -247,8 +300,10 @@
   </div>
 </div>
 
+</div><!-- end mainContent -->
+
 <script>
-// ══ WEBHOOKS (hardcoded) ══════════════════════════════════════════════════════
+// ══ WEBHOOKS ══
 const webhooks = {
   news: [
     "https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=k6LukOYY3oUIjWAbwOJvd6HBFoWTS_RsbsrFG-2ZG0c",
@@ -259,45 +314,110 @@ const webhooks = {
     "https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=IZg6yXQqGqRyXvBE26DX6t_E6IGJnKZoDokjzyjmY2E"
   ]
 };
-
 const PROFILES = {
   news: { title:"מבזק חדשות", logo:"https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png" },
   red:  { title:"צבע אדום",   logo:"https://i.postimg.cc/ncKKRgq9/image.png" }
 };
-const EMERGENCY_KEYWORDS = ["צבע אדום","התרעה","התרעת חירום","אזעקה","מרחב מוגן","ירי רקטות","חדירת מחבלים","חשש לאירוע","נפילה"];
+const EMERGENCY_KEYWORDS = ["צבע אדום","התרעה","אזעקה","מרחב מוגן","ירי רקטות","חדירת מחבלים","נפילה"];
 
 let currentProfile = 'news';
 let buttons = [];
 let countdownTimer = null;
 let driveAccessToken = null;
 let driveFolderId = null;
-let history = JSON.parse(localStorage.getItem('msg_history') || '[]');
+let msgHistory = JSON.parse(localStorage.getItem('msg_history') || '[]');
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-function animateModalIn(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('closing','open');
-  void el.offsetWidth;
-  el.classList.add('open');
+// ══ SSE — חיבור לבוט ══
+const SSE_URL = 'http://localhost:8080/events';
+let sseAlerts = [];
+let sseConnected = false;
+
+function initSSE() {
+  try {
+    const es = new EventSource(SSE_URL);
+
+    es.onopen = () => {
+      sseConnected = true;
+      document.getElementById('connDot').classList.add('connected');
+      document.getElementById('connLabel').textContent = 'מחובר';
+      document.getElementById('connLabel').classList.add('connected');
+    };
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'connected') return;
+        if (data.type === 'alert') {
+          addAlertToSidebar(data, true);
+        }
+      } catch {}
+    };
+
+    es.onerror = () => {
+      sseConnected = false;
+      document.getElementById('connDot').classList.remove('connected');
+      document.getElementById('connLabel').textContent = 'מנותק';
+      document.getElementById('connLabel').classList.remove('connected');
+      es.close();
+      setTimeout(initSSE, 5000);
+    };
+  } catch(e) {
+    setTimeout(initSSE, 5000);
+  }
 }
-function animateModalOut(id) {
-  const el = document.getElementById(id);
-  el.classList.add('closing');
-  el.classList.remove('open');
-  setTimeout(() => el.classList.remove('closing'), 300);
+
+function addAlertToSidebar(alert, isNew = false) {
+  sseAlerts.unshift(alert);
+  renderAlerts();
 }
+
+function renderAlerts() {
+  const list = document.getElementById('alertsList');
+  if (!sseAlerts.length) {
+    list.innerHTML = `<div class="alert-empty"><i class="fas fa-satellite-dish"></i><p>ממתין להתראות<br>מפיקוד העורף</p></div>`;
+    return;
+  }
+  list.innerHTML = sseAlerts.map((a, i) => {
+    const citiesId = 'cities-' + i;
+    const citiesHtml = (a.cities || []).map(c => `• ${c}`).join('<br>');
+    return `
+      <div class="alert-card ${i === 0 ? 'new-alert' : ''}">
+        <div class="alert-badge"><i class="fas fa-siren-on" style="font-size:9px"></i> התראה פעילה</div>
+        <div class="alert-title">🚨 ${a.title || 'צבע אדום'}</div>
+        <div class="alert-zones">📍 ${(a.zones || []).join(', ') || 'לא ידוע'}</div>
+        ${a.desc ? `<div style="font-size:11px;color:#64748b;margin-bottom:4px">ℹ️ ${a.desc}</div>` : ''}
+        <div class="alert-time"><i class="fas fa-clock" style="font-size:9px"></i> ${a.date} ${a.time}</div>
+        ${citiesHtml ? `
+          <div class="alert-cities-toggle" onclick="toggleCities('${citiesId}', this)">
+            <i class="fas fa-chevron-left" style="font-size:9px"></i> רשימת יישובים
+          </div>
+          <div class="alert-cities-list" id="${citiesId}">${citiesHtml}</div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleCities(id, btn) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  const icon = btn.querySelector('i');
+  icon.style.transform = el.classList.contains('open') ? 'rotate(-90deg)' : '';
+}
+
+// ══ Modals ══
+function animateModalIn(id) { const el=document.getElementById(id); el.classList.remove('closing','open'); void el.offsetWidth; el.classList.add('open'); }
+function animateModalOut(id) { const el=document.getElementById(id); el.classList.add('closing'); el.classList.remove('open'); setTimeout(()=>el.classList.remove('closing'),300); }
 
 function init() {
   document.getElementById('news-count').textContent = webhooks.news.length + ' Webhooks';
   document.getElementById('red-count').textContent  = webhooks.red.length  + ' Webhooks';
   renderHistory();
-  // Close dropdowns on outside click
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns();
-  });
+  document.addEventListener('click', e => { if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns(); });
+  initSSE();
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// ══ Tabs ══
 function switchTab(tab) {
   ['compose','history'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
@@ -306,252 +426,91 @@ function switchTab(tab) {
   if (tab==='history') renderHistory();
 }
 
-// ── Profile ───────────────────────────────────────────────────────────────────
+// ══ Profile ══
 function setProfile(key) {
   currentProfile = key;
-  ['news','red'].forEach(k => {
-    document.getElementById('btn-'+k).className = 'profile-btn' + (k===key ? (k==='news' ? ' active-news' : ' active-red') : '');
-  });
+  ['news','red'].forEach(k => { document.getElementById('btn-'+k).className = 'profile-btn' + (k===key?(k==='news'?' active-news':' active-red'):''); });
   const sb = document.getElementById('sendBtn');
   sb.className = 'send-btn send-btn-' + key;
   sb.innerHTML = `<i class="fas fa-paper-plane"></i> שלח כ${key==='news'?'מבזק חדשות':'צבע אדום'}`;
 }
 
-// ── Dropdowns ─────────────────────────────────────────────────────────────────
-function toggleDropdown(id) {
-  const el = document.getElementById(id);
-  const wasOpen = el.classList.contains('open');
-  closeAllDropdowns();
-  if (!wasOpen) el.classList.add('open');
-}
-function closeAllDropdowns() {
-  document.querySelectorAll('.dropdown-panel').forEach(el => el.classList.remove('open'));
-}
+// ══ Dropdowns ══
+function toggleDropdown(id) { const el=document.getElementById(id); const was=el.classList.contains('open'); closeAllDropdowns(); if(!was) el.classList.add('open'); }
+function closeAllDropdowns() { document.querySelectorAll('.dropdown-panel').forEach(el=>el.classList.remove('open')); }
 
-// ── Editor ────────────────────────────────────────────────────────────────────
-function format(cmd) { document.execCommand(cmd, false, null); }
+// ══ Editor ══
+function format(cmd) { document.execCommand(cmd,false,null); }
 function clearEditor() { document.getElementById('editor').innerHTML=''; onEditorChange(); }
+async function pasteFromClipboard() { try { const text=await navigator.clipboard.readText(); if(text){document.getElementById('editor').focus();document.execCommand('insertText',false,text);onEditorChange();} } catch(e) { document.getElementById('editor').focus(); } }
+function onEditorChange() { const text=document.getElementById('editor').innerText; document.getElementById('charCount').textContent=text.length+' תווים'; const hasKw=EMERGENCY_KEYWORDS.some(w=>text.includes(w)); document.getElementById('keywordAlert').classList.toggle('hidden',!hasKw); }
+function editorDragOver(e){e.preventDefault();const hasFile=[...(e.dataTransfer.items||[])].some(i=>i.kind==='file');if(hasFile){e.dataTransfer.dropEffect='copy';e.currentTarget.classList.add('drag-over');}}
+function editorDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.classList.remove('drag-over');}
+function editorDrop(e){e.preventDefault();e.currentTarget.classList.remove('drag-over');const files=[...(e.dataTransfer.files||[])];const img=files.find(f=>f.type.startsWith('image/'));const vid=files.find(f=>f.type.startsWith('video/'));if(img)uploadImageFile(img);else if(vid)uploadVideoFile(vid);}
 
-async function pasteFromClipboard() {
-  try {
-    const text = await navigator.clipboard.readText();
-    if (text) { document.getElementById('editor').focus(); document.execCommand('insertText',false,text); onEditorChange(); }
-  } catch(e) { document.getElementById('editor').focus(); showToast('לחץ Ctrl+V להדבקה','info'); }
-}
+// ══ Image ══
+function updateImgThumb(){const url=document.getElementById('newsImgUrl').value.trim();const wrap=document.getElementById('imgThumbWrap');if(url){document.getElementById('imgThumb').src=url;wrap.classList.remove('hidden');}else wrap.classList.add('hidden');}
+function clearImage(){document.getElementById('newsImgUrl').value='';document.getElementById('imgThumbWrap').classList.add('hidden');}
 
-function onEditorChange() {
-  const text = document.getElementById('editor').innerText;
-  document.getElementById('charCount').textContent = text.length + ' תווים';
-  const hasKw = EMERGENCY_KEYWORDS.some(w => text.includes(w));
-  document.getElementById('keywordAlert').classList.toggle('hidden', !hasKw);
-}
+// ══ Video ══
+function updateVidInfo(){const url=document.getElementById('videoUrl').value.trim();const badge=document.getElementById('vidInfoBadge');if(url){document.getElementById('vidInfoText').textContent=url.length>50?url.substring(0,50)+'...':url;badge.classList.remove('hidden');}else badge.classList.add('hidden');}
+function clearVideo(){document.getElementById('videoUrl').value='';document.getElementById('vidInfoBadge').classList.add('hidden');}
 
-function editorDragOver(e) { e.preventDefault(); const hasFile=[...(e.dataTransfer.items||[])].some(i=>i.kind==='file'); if(hasFile){e.dataTransfer.dropEffect='copy';e.currentTarget.classList.add('drag-over');} }
-function editorDragLeave(e) { if(!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over'); }
-function editorDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); const files=[...(e.dataTransfer.files||[])]; const img=files.find(f=>f.type.startsWith('image/')); const vid=files.find(f=>f.type.startsWith('video/')); if(img) uploadImageFile(img); else if(vid) uploadVideoFile(vid); }
+// ══ Buttons ══
+function addButton(){const text=document.getElementById('btnText').value.trim();const url=document.getElementById('btnUrl').value.trim();if(!text||!url)return;buttons.push({id:Date.now(),text,url});document.getElementById('btnText').value='';document.getElementById('btnUrl').value='';renderButtons();}
+function removeButton(id){buttons=buttons.filter(b=>b.id!==id);renderButtons();}
+function renderButtons(){document.getElementById('buttonsList').innerHTML=buttons.map(b=>`<div class="flex items-center gap-2 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl text-sm"><i class="fas fa-mouse-pointer text-orange-400 text-xs"></i><span class="font-semibold text-orange-700">${b.text}</span><button onclick="removeButton(${b.id})" class="text-red-400 hover:text-red-600 mr-auto"><i class="fas fa-times text-xs"></i></button></div>`).join('');}
 
-// ── Image ─────────────────────────────────────────────────────────────────────
-function updateImgThumb() {
-  const url = document.getElementById('newsImgUrl').value.trim();
-  const wrap = document.getElementById('imgThumbWrap');
-  if (url) { document.getElementById('imgThumb').src=url; wrap.classList.remove('hidden'); }
-  else wrap.classList.add('hidden');
-}
-function clearImage() { document.getElementById('newsImgUrl').value=''; document.getElementById('imgThumbWrap').classList.add('hidden'); }
+// ══ Send ══
+function initiateSend(){const text=document.getElementById('editor').innerText.trim();if(!text&&!document.getElementById('newsImgUrl').value){showToast('הודעה ריקה','error');return;}closeAllDropdowns();const hasKw=EMERGENCY_KEYWORDS.some(w=>text.includes(w));if(currentProfile==='news'&&hasKw){animateModalIn('modalEmergency');return;}startCountdown();}
+function handleModal(choice){animateModalOut('modalEmergency');if(choice==='switch'){setProfile('red');startCountdown();}else if(choice==='continue')startCountdown();}
+function startCountdown(){let t=2;const n=webhooks[currentProfile].length;showStatus('fas fa-clock','מכין שליחה...',`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`,true,false,0);countdownTimer=setInterval(()=>{t--;if(t>0){document.getElementById('statusDesc').textContent=`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`;}else{clearInterval(countdownTimer);document.getElementById('statusCancelWrap').classList.add('hidden');executeActualSend();}},1000);}
+function cancelSend(){clearInterval(countdownTimer);hideStatus();showToast('השליחה בוטלה','info');}
 
-// ── Video ─────────────────────────────────────────────────────────────────────
-function updateVidInfo() {
-  const url = document.getElementById('videoUrl').value.trim();
-  const badge = document.getElementById('vidInfoBadge');
-  if (url) { document.getElementById('vidInfoText').textContent = url.length>50 ? url.substring(0,50)+'...' : url; badge.classList.remove('hidden'); }
-  else badge.classList.add('hidden');
-}
-function clearVideo() { document.getElementById('videoUrl').value=''; document.getElementById('vidInfoBadge').classList.add('hidden'); }
-
-// ── Action buttons ────────────────────────────────────────────────────────────
-function addButton() {
-  const text = document.getElementById('btnText').value.trim();
-  const url  = document.getElementById('btnUrl').value.trim();
-  if (!text || !url) return;
-  buttons.push({id:Date.now(),text,url});
-  document.getElementById('btnText').value='';
-  document.getElementById('btnUrl').value='';
-  renderButtons();
-}
-function removeButton(id) { buttons=buttons.filter(b=>b.id!==id); renderButtons(); }
-function renderButtons() {
-  document.getElementById('buttonsList').innerHTML = buttons.map(b => `
-    <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl text-sm">
-      <i class="fas fa-mouse-pointer text-orange-400 text-xs"></i>
-      <span class="font-semibold text-orange-700">${b.text}</span>
-      <button onclick="removeButton(${b.id})" class="text-red-400 hover:text-red-600 mr-auto"><i class="fas fa-times text-xs"></i></button>
-    </div>
-  `).join('');
-}
-
-// ── Send flow ─────────────────────────────────────────────────────────────────
-function initiateSend() {
-  const text = document.getElementById('editor').innerText.trim();
-  if (!text && !document.getElementById('newsImgUrl').value) { showToast('הודעה ריקה','error'); return; }
-  closeAllDropdowns();
-  const hasKw = EMERGENCY_KEYWORDS.some(w => text.includes(w));
-  if (currentProfile==='news' && hasKw) { animateModalIn('modalEmergency'); return; }
-  startCountdown();
-}
-function handleModal(choice) {
-  animateModalOut('modalEmergency');
-  if (choice==='switch') { setProfile('red'); startCountdown(); }
-  else if (choice==='continue') startCountdown();
-}
-function startCountdown() {
-  let t=2; const n=webhooks[currentProfile].length;
-  showStatus('fas fa-clock','מכין שליחה...',`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`,true,false,0);
-  countdownTimer=setInterval(()=>{ t--; if(t>0){document.getElementById('statusDesc').textContent=`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`;}else{clearInterval(countdownTimer);document.getElementById('statusCancelWrap').classList.add('hidden');executeActualSend();}},1000);
-}
-function cancelSend() { clearInterval(countdownTimer); hideStatus(); showToast('השליחה בוטלה','info'); }
-
-async function executeActualSend() {
-  const n = webhooks[currentProfile].length;
+async function executeActualSend(){
+  const n=webhooks[currentProfile].length;
   updateStatus('fas fa-spinner fa-spin','שולח...',`שולח ל-${n} קבוצות`,'bg-blue-100 text-blue-600',false,50);
-  const content  = document.getElementById('editor').innerHTML;
-  const imgUrl   = document.getElementById('newsImgUrl').value.trim();
-  const videoUrl = document.getElementById('videoUrl').value.trim();
-  const sendTime = new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  const profile  = PROFILES[currentProfile];
-  let text = content.replace(/<div>/g,'\n').replace(/<\/div>/g,'').replace(/<br>/g,'\n').replace(/&nbsp;/g,' ');
-  const widgets = [{textParagraph:{text}}];
-  if (imgUrl)   widgets.push({image:{imageUrl:imgUrl}});
-  if (videoUrl) widgets.push({buttonList:{buttons:[{text:'▶ צפה בסרטון',onClick:{openLink:{url:videoUrl}},color:{red:0.29,green:0.14,blue:0.69,alpha:1}}]}});
-  if (buttons.length) widgets.push({buttonList:{buttons:buttons.map(b=>({text:b.text,onClick:{openLink:{url:b.url}}}))}});
+  const content=document.getElementById('editor').innerHTML;
+  const imgUrl=document.getElementById('newsImgUrl').value.trim();
+  const videoUrl=document.getElementById('videoUrl').value.trim();
+  const sendTime=new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  const profile=PROFILES[currentProfile];
+  let text=content.replace(/<div>/g,'\n').replace(/<\/div>/g,'').replace(/<br>/g,'\n').replace(/&nbsp;/g,' ');
+  const widgets=[{textParagraph:{text}}];
+  if(imgUrl) widgets.push({image:{imageUrl:imgUrl}});
+  if(videoUrl) widgets.push({buttonList:{buttons:[{text:'▶ צפה בסרטון',onClick:{openLink:{url:videoUrl}},color:{red:0.29,green:0.14,blue:0.69,alpha:1}}]}});
+  if(buttons.length) widgets.push({buttonList:{buttons:buttons.map(b=>({text:b.text,onClick:{openLink:{url:b.url}}}))}});
   const payload={cardsV2:[{card:{header:{title:profile.title,subtitle:"נשלח ב: "+sendTime,imageUrl:profile.logo,imageType:"CIRCLE"},sections:[{widgets}]}}]};
-  try {
+  try{
     const results=await Promise.all(webhooks[currentProfile].map(url=>fetch(url,{method:'POST',body:JSON.stringify(payload)})));
-    if (!results.every(r=>r.ok)) throw new Error('חלק מהשליחות נכשלו');
+    if(!results.every(r=>r.ok)) throw new Error('חלק מהשליחות נכשלו');
     addToHistory(currentProfile,document.getElementById('editor').innerText.trim().substring(0,120),imgUrl,videoUrl,n);
     updateStatus('fas fa-check-double','נשלח בהצלחה!',`פורסם ב-${n} קבוצות`,'bg-green-100 text-green-600',false,100);
-    document.getElementById('editor').innerHTML=''; clearImage(); clearVideo(); buttons=[]; renderButtons(); onEditorChange();
+    document.getElementById('editor').innerHTML='';clearImage();clearVideo();buttons=[];renderButtons();onEditorChange();
     setTimeout(hideStatus,2200);
-  } catch(e) {
-    updateStatus('fas fa-exclamation-triangle','שגיאה בשליחה',e.message,'bg-red-100 text-red-600',false,0);
-    setTimeout(hideStatus,3000);
-  }
+  }catch(e){updateStatus('fas fa-exclamation-triangle','שגיאה בשליחה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);}
 }
 
-// ── Status modal ──────────────────────────────────────────────────────────────
-function showStatus(icon,title,desc,showCancel,showProg,prog) {
-  animateModalIn('modalStatus');
-  document.getElementById('statusTitle').textContent=title;
-  document.getElementById('statusDesc').textContent=desc;
-  document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);
-  document.getElementById('statusProgWrap').classList.toggle('hidden',!showProg);
-  document.getElementById('statusProgFill').style.width=prog+'%';
-  const iw=document.getElementById('statusIcon');
-  iw.className='w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600';
-  iw.innerHTML=`<i class="${icon}"></i>`;
-}
-function updateStatus(iconClass,title,desc,colorClass,showCancel,prog) {
-  document.getElementById('statusTitle').textContent=title;
-  document.getElementById('statusDesc').textContent=desc;
-  document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);
-  document.getElementById('statusProgFill').style.width=prog+'%';
-  const iw=document.getElementById('statusIcon');
-  iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
-  iw.innerHTML=`<i class="${iconClass}"></i>`;
-}
-function hideStatus() { animateModalOut('modalStatus'); }
+// ══ Status modal ══
+function showStatus(icon,title,desc,showCancel,showProg,prog){animateModalIn('modalStatus');document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgWrap').classList.toggle('hidden',!showProg);document.getElementById('statusProgFill').style.width=prog+'%';const iw=document.getElementById('statusIcon');iw.className='w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl bg-blue-100 text-blue-600';iw.innerHTML=`<i class="${icon}"></i>`;}
+function updateStatus(iconClass,title,desc,colorClass,showCancel,prog){document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgFill').style.width=prog+'%';const iw=document.getElementById('statusIcon');iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;iw.innerHTML=`<i class="${iconClass}"></i>`;}
+function hideStatus(){animateModalOut('modalStatus');}
 
-// ── Image upload ──────────────────────────────────────────────────────────────
-async function uploadImageFile(file) {
-  const apiKey=document.getElementById('imgbbApiKey').value.trim();
-  if(!apiKey||!file) return;
-  showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);
-  try {
-    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
-    updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','bg-blue-100 text-blue-600',false,60);
-    const form=new FormData(); form.append('key',apiKey); form.append('image',base64);
-    const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
-    const data=await res.json();
-    if(data.success){ document.getElementById('newsImgUrl').value=data.data.url; updateImgThumb(); updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','bg-green-100 text-green-600',false,100); setTimeout(hideStatus,1800); }
-    else throw new Error(data.error?.message||'שגיאה');
-  } catch(e){ updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); }
-}
+// ══ Image upload ══
+async function uploadImageFile(file){const apiKey=document.getElementById('imgbbApiKey').value.trim();if(!apiKey||!file)return;showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);try{const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','bg-blue-100 text-blue-600',false,60);const form=new FormData();form.append('key',apiKey);form.append('image',base64);const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});const data=await res.json();if(data.success){document.getElementById('newsImgUrl').value=data.data.url;updateImgThumb();updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','bg-green-100 text-green-600',false,100);setTimeout(hideStatus,1800);}else throw new Error(data.error?.message||'שגיאה');}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);}}
 
-// ── Video upload (Google Drive) ───────────────────────────────────────────────
-async function uploadVideoFile(file) {
-  if(!file) return;
-  showStatus('fab fa-google','מתחבר ל-Drive...','נא אשר גישה','bg-blue-100 text-blue-600',false,5);
-  let token;
-  try { token=await getDriveToken(); } catch(e){ updateStatus('fas fa-times-circle','שגיאת כניסה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); return; }
-  updateStatus('fas fa-folder-open','מאתר תיקייה...','סרטוני מבזק','bg-blue-100 text-blue-600',false,20);
-  let folderId;
-  try { folderId=await getOrCreateFolder(token); } catch(e){ updateStatus('fas fa-times-circle','שגיאת תיקייה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); return; }
-  updateStatus('fas fa-cloud-upload-alt','מעלה לDrive...',file.name,'bg-blue-100 text-blue-600',false,50);
-  try {
-    const metadata={name:file.name,mimeType:file.type,parents:[folderId]};
-    const form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
-    form.append('file',file);
-    const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});
-    if(!res.ok) throw new Error('שגיאת העלאה: '+res.status);
-    const {id}=await res.json();
-    document.getElementById('videoUrl').value=`https://drive.google.com/file/d/${id}/view`;
-    updateVidInfo();
-    updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','bg-green-100 text-green-600',false,100);
-    setTimeout(hideStatus,2500);
-  } catch(e){ updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0); setTimeout(hideStatus,3000); }
-}
-function getDriveToken() {
-  return new Promise((resolve,reject)=>{
-    if(driveAccessToken){resolve(driveAccessToken);return;}
-    const clientId=document.getElementById('googleClientId').value.trim();
-    const client=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.file',callback:(resp)=>{if(resp.error){reject(new Error(resp.error));return;}driveAccessToken=resp.access_token;resolve(driveAccessToken);}});
-    client.requestAccessToken();
-  });
-}
-async function getOrCreateFolder(token) {
-  if(driveFolderId) return driveFolderId;
-  const sr=await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'%D7%A1%D7%A8%D7%98%D7%95%D7%A0%D7%99+%D7%9E%D7%91%D7%96%D7%A7'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});
-  if(sr.ok){const d=await sr.json();if(d.files&&d.files.length>0){driveFolderId=d.files[0].id;return driveFolderId;}}
-  const fr=await fetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:'סרטוני מבזק',mimeType:'application/vnd.google-apps.folder'})});
-  if(!fr.ok) throw new Error('שגיאה ביצירת תיקייה: '+fr.status);
-  const f=await fr.json(); driveFolderId=f.id; return driveFolderId;
-}
+// ══ Video upload ══
+async function uploadVideoFile(file){if(!file)return;showStatus('fab fa-google','מתחבר ל-Drive...','נא אשר גישה','bg-blue-100 text-blue-600',false,5);let token;try{token=await getDriveToken();}catch(e){updateStatus('fas fa-times-circle','שגיאת כניסה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-folder-open','מאתר תיקייה...','סרטוני מבזק','bg-blue-100 text-blue-600',false,20);let folderId;try{folderId=await getOrCreateFolder(token);}catch(e){updateStatus('fas fa-times-circle','שגיאת תיקייה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-cloud-upload-alt','מעלה לDrive...',file.name,'bg-blue-100 text-blue-600',false,50);try{const metadata={name:file.name,mimeType:file.type,parents:[folderId]};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));form.append('file',file);const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});if(!res.ok)throw new Error('שגיאת העלאה: '+res.status);const{id}=await res.json();document.getElementById('videoUrl').value=`https://drive.google.com/file/d/${id}/view`;updateVidInfo();updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','bg-green-100 text-green-600',false,100);setTimeout(hideStatus,2500);}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'bg-red-100 text-red-600',false,0);setTimeout(hideStatus,3000);}}
+function getDriveToken(){return new Promise((resolve,reject)=>{if(driveAccessToken){resolve(driveAccessToken);return;}const clientId=document.getElementById('googleClientId').value.trim();const client=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.file',callback:(resp)=>{if(resp.error){reject(new Error(resp.error));return;}driveAccessToken=resp.access_token;resolve(driveAccessToken);}});client.requestAccessToken();});}
+async function getOrCreateFolder(token){if(driveFolderId)return driveFolderId;const sr=await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'%D7%A1%D7%A8%D7%98%D7%95%D7%A0%D7%99+%D7%9E%D7%91%D7%96%D7%A7'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});if(sr.ok){const d=await sr.json();if(d.files&&d.files.length>0){driveFolderId=d.files[0].id;return driveFolderId;}}const fr=await fetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:'סרטוני מבזק',mimeType:'application/vnd.google-apps.folder'})});if(!fr.ok)throw new Error('שגיאה ביצירת תיקייה: '+fr.status);const f=await fr.json();driveFolderId=f.id;return driveFolderId;}
 
-// ── History ───────────────────────────────────────────────────────────────────
-function addToHistory(profile,text,imgUrl,videoUrl,groupCount) {
-  history.unshift({id:Date.now(),profile,text:text||'(ללא טקסט)',imgUrl,videoUrl,groupCount,time:new Date().toLocaleString('he-IL')});
-  if(history.length>50) history.pop();
-  localStorage.setItem('msg_history',JSON.stringify(history));
-}
-function renderHistory() {
-  const c=document.getElementById('historyList');
-  if(!history.length){c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;return;}
-  c.innerHTML=history.map(e=>`
-    <div class="history-item">
-      <div class="flex items-start justify-between gap-3">
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-700 leading-relaxed">${e.text}</p>
-          <div class="flex items-center gap-2 mt-2 flex-wrap">
-            <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${e.profile==='news'?'bg-blue-50 text-blue-600 border border-blue-200':'bg-red-50 text-red-600 border border-red-200'}">${e.profile==='news'?'מבזק חדשות':'צבע אדום'}</span>
-            <span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>
-            ${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}
-            ${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}
-          </div>
-        </div>
-        <div class="text-xs text-gray-400 whitespace-nowrap">${e.time}</div>
-      </div>
-    </div>
-  `).join('');
-}
-function clearHistory() { if(!confirm('למחוק את כל ההיסטוריה?')) return; history=[]; localStorage.setItem('msg_history','[]'); renderHistory(); }
+// ══ History ══
+function addToHistory(profile,text,imgUrl,videoUrl,groupCount){msgHistory.unshift({id:Date.now(),profile,text:text||'(ללא טקסט)',imgUrl,videoUrl,groupCount,time:new Date().toLocaleString('he-IL')});if(msgHistory.length>50)msgHistory.pop();localStorage.setItem('msg_history',JSON.stringify(msgHistory));}
+function renderHistory(){const c=document.getElementById('historyList');if(!msgHistory.length){c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;return;}c.innerHTML=msgHistory.map(e=>`<div class="history-item"><div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0"><p class="text-sm text-gray-700 leading-relaxed">${e.text}</p><div class="flex items-center gap-2 mt-2 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${e.profile==='news'?'bg-blue-50 text-blue-600 border border-blue-200':'bg-red-50 text-red-600 border border-red-200'}">${e.profile==='news'?'מבזק חדשות':'צבע אדום'}</span><span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}</div></div><div class="text-xs text-gray-400 whitespace-nowrap">${e.time}</div></div></div>`).join('');}
+function clearHistory(){if(!confirm('למחוק את כל ההיסטוריה?'))return;msgHistory=[];localStorage.setItem('msg_history','[]');renderHistory();}
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function showToast(msg,type='info') {
-  const colors={info:'bg-gray-800',error:'bg-red-600',success:'bg-green-600'};
-  const t=document.createElement('div');
-  t.className=`fixed bottom-6 left-1/2 -translate-x-1/2 ${colors[type]} text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl z-[100]`;
-  t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2500);
-}
+// ══ Toast ══
+function showToast(msg,type='info'){const colors={info:'bg-gray-800',error:'bg-red-600',success:'bg-green-600'};const t=document.createElement('div');t.className=`fixed bottom-6 left-1/2 -translate-x-1/2 ${colors[type]} text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl z-[100]`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
 
 init();
 </script>
