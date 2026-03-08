@@ -83,8 +83,8 @@
       border-radius:50%;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       font-size:12px;font-weight:800;color:white;
-      align-self:flex-end;flex-shrink:0;
-      margin-bottom:2px;
+      align-self:flex-start;flex-shrink:0;
+      margin-top:2px;
     }
     .msg-group-avatar img{width:100%;height:100%;object-fit:cover}
 
@@ -125,14 +125,17 @@
     .bubble.other.cont{border-radius:18px 18px 18px 18px}
     .bubble.other.cont:last-child{border-radius:4px 18px 18px 18px}
 
-    /* ── TIME ── */
-    .bubble-meta{
-      display:flex;align-items:center;gap:4px;
-      font-size:10px;opacity:.5;margin-top:3px;
-      padding:0 3px;
+    /* ── TIME (inside bubble) ── */
+    .bubble-meta{display:none} /* hidden - time is inside bubble */
+    .bubble-time-inline{
+      display:block;
+      font-size:10px;opacity:.45;
+      margin-top:4px;
+      text-align:left;
+      line-height:1;
     }
-    .bubble-meta.me{justify-content:flex-end;color:#374151}
-    .bubble-meta.other{justify-content:flex-start;color:#374151}
+    .bubble.me .bubble-time-inline{color:rgba(255,255,255,.8)}
+    .bubble.other .bubble-time-inline{color:#6b7280}
 
     /* ── REPLY PREVIEW ── */
     .reply-preview{
@@ -795,12 +798,12 @@ function renderChat(msgs){
 
       wrapEl.appendChild(bEl);
 
-      // Time only on last bubble of group
-      if(isLast){
-        const metaEl=document.createElement('div');
-        metaEl.className='bubble-meta '+(isMe?'me':'other');
-        metaEl.innerHTML=`<span>${msg.time||''}</span>`;
-        wrapEl.appendChild(metaEl);
+      // Time inside bubble, only on last bubble of group
+      if(isLast&&msg.time){
+        const timeSpan=document.createElement('span');
+        timeSpan.className='bubble-time-inline';
+        timeSpan.textContent=msg.time;
+        bEl.appendChild(timeSpan);
       }
 
       // Reactions — tiny, right under the bubble
