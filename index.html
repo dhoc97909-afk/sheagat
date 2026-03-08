@@ -318,6 +318,24 @@
     .loading-dots span:nth-child(2){animation-delay:.2s}
     .loading-dots span:nth-child(3){animation-delay:.4s}
     #statusIcon{transition:background .3s,color .3s}
+
+    /* ── TYPING INDICATOR ── */
+    .typing-indicator{
+      display:none;padding:6px 14px 2px;
+      font-size:12px;color:#6b7280;
+      align-items:center;gap:6px;
+      flex-shrink:0;background:#f7f8fc;
+    }
+    .typing-indicator.show{display:flex}
+    .typing-dots{display:inline-flex;gap:3px;align-items:center}
+    .typing-dots span{
+      width:5px;height:5px;border-radius:50%;
+      background:#9ca3af;
+      animation:tdot 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2){animation-delay:.2s}
+    .typing-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
   </style>
 </head>
 <body>
@@ -379,6 +397,10 @@
       <p>אין הודעות עדיין<br>היה הראשון לכתוב 🚀</p>
     </div>
   </div>
+  <div class="typing-indicator" id="typingIndicator">
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+    <span id="typingText"></span>
+  </div>
   <div class="reply-bar" id="replyBar">
     <div id="replyText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px"></div>
     <button onclick="cancelReply()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">✕</button>
@@ -386,7 +408,7 @@
   <div class="chat-input-area">
     <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="הקלד הודעה..."
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px';onChatInput()"></textarea>
     <button onclick="sendChat()" class="chat-send-btn"><i class="fas fa-paper-plane" style="font-size:13px"></i></button>
   </div>
 </div>
@@ -598,8 +620,10 @@ function showApp(){
   });
   loadChat();
   pingPresence();
+  pollTyping();
   setInterval(loadChat,2000);
   setInterval(pingPresence,15000);
+  setInterval(pollTyping,2000);
 }
 
 function doLogout(){
@@ -889,6 +913,36 @@ function setReply(id,sender,text){
 }
 function cancelReply(){chatReplyTo=null;document.getElementById('replyBar').className='reply-bar';}
 
+// ── TYPING ──
+let typingTimer=null;
+function onChatInput(){
+  if(!currentUser)return;
+  fetch(BACKEND+'/typing_ping',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:chatUserName,email:chatUserEmail})}).catch(()=>{});
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(()=>{
+    fetch(BACKEND+'/typing_stop',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:chatUserEmail})}).catch(()=>{});
+  },3000);
+}
+
+async function pollTyping(){
+  if(!currentUser)return;
+  try{
+    const r=await fetch(BACKEND+'/typing_status');
+    const d=await r.json();
+    const others=(d.typers||[]).filter(n=>n!==chatUserName);
+    const el=document.getElementById('typingIndicator');
+    const txt=document.getElementById('typingText');
+    if(others.length){
+      txt.textContent=others.join(', ')+(others.length===1?' מקליד...':' מקלידים...');
+      el.classList.add('show');
+    } else {
+      el.classList.remove('show');
+    }
+  }catch(e){}
+}
+
 async function sendChat(){
   const inp=document.getElementById('chatInput');
   const text=inp.value.trim();
@@ -897,6 +951,8 @@ async function sendChat(){
   if(chatReplyTo)body.replyTo=chatReplyTo;
   inp.value='';inp.style.height='auto';
   cancelReply();
+  clearTimeout(typingTimer);
+  fetch(BACKEND+'/typing_stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:chatUserEmail})}).catch(()=>{});
   try{
     await fetch(BACKEND+'/chat_send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     lastIds='';loadChat();
@@ -1000,7 +1056,7 @@ async function executeActualSend(){
 }
 
 const STATUS_CONFIG={'fas fa-clock':{anim:'anim-tick',color:'bg-blue-100 text-blue-500'},'fas fa-spinner fa-spin':{anim:'anim-spin',color:'bg-blue-100 text-blue-500'},'fas fa-cloud-upload-alt':{anim:'anim-cloud',color:'bg-blue-100 text-blue-500'},'fas fa-folder-open':{anim:'anim-bounce',color:'bg-yellow-100 text-yellow-500'},'fab fa-google':{anim:'anim-bounce',color:'bg-blue-100 text-blue-500'},'fas fa-image':{anim:'anim-bounce',color:'bg-purple-100 text-purple-500'},'fas fa-check-double':{anim:'anim-check',color:'bg-green-100 text-green-500'},'fas fa-exclamation-triangle':{anim:'anim-shake',color:'bg-red-100 text-red-500'},'fas fa-times-circle':{anim:'anim-shake',color:'bg-red-100 text-red-500'}};
-function getIconHtml(ic){const cfg=STATUS_CONFIG[ic]||{anim:'anim-bounce',color:'bg-blue-100 text-blue-500'};const isL=ic.includes('spinner')||ic.includes('clock');const dots=isL?`<div class="loading-dots" style="position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);color:#93c5fd"><span></span><span></span><span></span></div>`:'';return{iconHtml:`<i class="${ic} ${cfg.anim}" style="position:relative"></i>${dots}`,colorClass:cfg.color};}
+function getIconHtml(ic){const cfg=STATUS_CONFIG[ic]||{anim:'anim-bounce',color:'bg-blue-100 text-blue-500'};return{iconHtml:`<i class="${ic} ${cfg.anim}"></i>`,colorClass:cfg.color};}
 function showStatus(icon,title,desc,cc,showCancel,prog){animateModalIn('modalStatus');document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgWrap').classList.add('hidden');document.getElementById('statusProgFill').style.width=prog+'%';const{iconHtml,colorClass}=getIconHtml(icon);const iw=document.getElementById('statusIcon');iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;iw.style.position='relative';iw.innerHTML=iconHtml;}
 function updateStatus(ic,title,desc,cc,showCancel,prog){document.getElementById('statusTitle').textContent=title;document.getElementById('statusDesc').textContent=desc;document.getElementById('statusCancelWrap').classList.toggle('hidden',!showCancel);document.getElementById('statusProgFill').style.width=prog+'%';const{iconHtml,colorClass}=getIconHtml(ic);const iw=document.getElementById('statusIcon');iw.className=`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;iw.style.position='relative';iw.innerHTML=iconHtml;}
 function hideStatus(){animateModalOut('modalStatus');}
