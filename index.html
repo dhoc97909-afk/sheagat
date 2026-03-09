@@ -1536,7 +1536,15 @@ async function executeActualSend(){
   try{
     const results=await Promise.all(webhooks[currentProfile].map(url=>fetch(url,{method:'POST',body:JSON.stringify(payload)})));
     if(!results.every(r=>r.ok))throw new Error('חלק מהשליחות נכשלו');
-    addToHistory(currentProfile,document.getElementById('editor').innerText.trim().substring(0,120),imgUrl,videoUrl,n);
+    // Collect message names (IDs) returned by Google Chat for later deletion
+    const msgNames=[];
+    for(let i=0;i<results.length;i++){
+      try{
+        const rd=await results[i].clone().json();
+        if(rd.name)msgNames.push({webhook:webhooks[currentProfile][i],msgName:rd.name,groupName:(GROUPS[i]||{}).name||('קבוצה '+(i+1))});
+      }catch(e){}
+    }
+    addToHistory(currentProfile,document.getElementById('editor').innerText.trim().substring(0,120),imgUrl,videoUrl,n,msgNames);
     updateStatus('fas fa-check-double','נשלח בהצלחה!',`פורסם ב-${n} קבוצות`,'',false,100);
     document.getElementById('editor').innerHTML='';clearImage();clearVideo();buttons=[];renderButtons();onEditorChange();
     setTimeout(hideStatus,2200);
@@ -1576,14 +1584,15 @@ function getDriveToken(){return new Promise((resolve,reject)=>{
 async function getOrCreateFolder(token){if(driveFolderId)return driveFolderId;const sr=await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'סרטוני+מבזק'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});if(sr.ok){const d=await sr.json();if(d.files&&d.files.length>0){driveFolderId=d.files[0].id;return driveFolderId;}}const fr=await fetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:'סרטוני מבזק',mimeType:'application/vnd.google-apps.folder'})});if(!fr.ok)throw new Error('שגיאה ביצירת תיקייה: '+fr.status);const f=await fr.json();driveFolderId=f.id;return driveFolderId;}
 
 // ══ HISTORY (server-side, shared) ══
-async function addToHistory(profile,text,imgUrl,videoUrl,groupCount){
+async function addToHistory(profile,text,imgUrl,videoUrl,groupCount,msgNames){
   const entry={
     id:Date.now(),profile,text:text||'(ללא טקסט)',
     imgUrl,videoUrl,groupCount,
     time:new Date().toLocaleString('he-IL'),
     sender:chatUserName,
     senderPicture:chatUserPicture,
-    senderEmail:chatUserEmail
+    senderEmail:chatUserEmail,
+    msgNames:msgNames||[]  // [{webhook, msgName, groupName}]
   };
   msgHistory.unshift(entry);
   if(msgHistory.length>100)msgHistory.pop();
@@ -1609,19 +1618,25 @@ function renderHistory(){
     c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;
     return;
   }
-  const COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
-  const col=s=>COLORS[(s||'').charCodeAt(0)%COLORS.length];
+  const HCOLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
+  const hcol=s=>HCOLORS[(s||'').charCodeAt(0)%HCOLORS.length];
+  const isAdmin=currentUser&&currentUser.email===SUPER_ADMIN.toLowerCase();
   c.innerHTML=msgHistory.map(e=>{
     const senderName=e.sender||'לא ידוע';
     const senderPic=e.senderPicture||'';
+    const canDelete=isAdmin||(e.senderEmail&&e.senderEmail===chatUserEmail);
     const avatarHtml=senderPic
       ? `<img src="${senderPic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-      : `<span>${senderName[0].toUpperCase()}</span>`;
-    return `<div class="history-item">
+      : `<span>${(senderName[0]||'?').toUpperCase()}</span>`;
+    const hasGoogleMsgs=(e.msgNames||[]).length>0;
+    return `<div class="history-item" id="hist-${e.id}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="width:28px;height:28px;border-radius:50%;background:${col(senderName)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:${hcol(senderName)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
         <span style="font-size:12px;font-weight:700;color:#374151">${senderName}</span>
         <span style="font-size:11px;color:#9ca3af;margin-right:auto">${e.time}</span>
+        ${canDelete?`<button onclick="deleteHistoryEntry(${e.id})" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:4px 10px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:700;font-family:'Assistant',sans-serif;display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <i class="fas fa-trash" style="font-size:10px"></i>${hasGoogleMsgs?'מחק מקבוצות':'מחק'}
+        </button>`:''}
       </div>
       <div class="flex items-start gap-3">
         <div class="flex-1 min-w-0">
@@ -1631,11 +1646,53 @@ function renderHistory(){
             <span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>
             ${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}
             ${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}
+            ${hasGoogleMsgs?`<span class="text-xs text-green-600"><i class="fas fa-check ml-1"></i>ניתן למחיקה מגוגל</span>`:'<span class="text-xs text-gray-400"><i class="fas fa-times ml-1"></i>לא ניתן למחוק מגוגל</span>'}
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+async function deleteHistoryEntry(id){
+  const entry=msgHistory.find(e=>e.id===id);
+  if(!entry)return;
+  const hasGoogle=(entry.msgNames||[]).length>0;
+  const confirmMsg=hasGoogle
+    ?`למחוק את ההודעה גם מ-${entry.msgNames.length} קבוצות גוגל?`
+    :'למחוק מההיסטוריה? (ההודעה נשארת בקבוצות)';
+  if(!confirm(confirmMsg))return;
+
+  // Show progress
+  const btn=document.querySelector(`#hist-${id} button`);
+  if(btn){btn.disabled=true;btn.textContent='מוחק...';}
+
+  // Delete from Google Chat groups
+  if(hasGoogle){
+    let deleted=0,failed=0;
+    for(const m of entry.msgNames){
+      try{
+        // Extract key+token from webhook URL
+        const wUrl=new URL(m.webhook);
+        const key=wUrl.searchParams.get('key');
+        const token=wUrl.searchParams.get('token');
+        const deleteUrl=`https://chat.googleapis.com/v1/${m.msgName}?key=${key}&token=${encodeURIComponent(token)}`;
+        const r=await fetch(deleteUrl,{method:'DELETE'});
+        if(r.ok||r.status===200)deleted++;
+        else failed++;
+      }catch(e){failed++;}
+    }
+    if(failed>0)alert(`נמחק מ-${deleted} קבוצות, נכשל ב-${failed} קבוצות`);
+  }
+
+  // Remove from local history + save
+  msgHistory=msgHistory.filter(e=>e.id!==id);
+  try{
+    await fetch(BACKEND+'/history_save',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({history:msgHistory,email:chatUserEmail})});
+  }catch(e){}
+  renderHistory();
 }
 
 async function clearHistory(){
