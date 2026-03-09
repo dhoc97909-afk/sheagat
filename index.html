@@ -318,6 +318,13 @@
     .loading-dots span:nth-child(2){animation-delay:.2s}
     .loading-dots span:nth-child(3){animation-delay:.4s}
     #statusIcon{transition:background .3s,color .3s}
+    @keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .admin-msg-item{border-radius:14px;padding:14px 16px;margin-bottom:10px;transition:all .2s}
+    .admin-msg-item.unread{background:#eff6ff;border:1.5px solid #bfdbfe}
+    .admin-msg-item.read{background:#f9fafb;border:1px solid #e5e7eb}
+    .admin-msg-sender{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .admin-msg-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;flex-shrink:0}
+    .admin-msg-avatar img{width:100%;height:100%;object-fit:cover}
 
     /* ── TYPING INDICATOR ── */
     .typing-indicator{
@@ -361,9 +368,10 @@
     </div>
     <div style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">חשבונות מורשים</div>
     <div id="allowedList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-    <div style="display:flex;gap:8px">
-      <input id="newEmailInput" type="email" placeholder="הוסף אימייל Google..." class="input-field" style="font-size:13px;padding:8px 12px" onkeydown="if(event.key==='Enter')addAllowedEmail()">
-      <button onclick="addAllowedEmail()" style="background:#2563eb;color:white;border:none;border-radius:10px;padding:8px 16px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;font-size:13px;white-space:nowrap">+ הוסף</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input id="newEmailInput" type="email" placeholder="אימייל Google..." class="input-field" style="font-size:13px;padding:8px 12px" onkeydown="if(event.key==='Enter')addAllowedEmail()">
+      <input id="newNameInput" type="text" placeholder="שם תצוגה (בעברית/אנגלית)" class="input-field" style="font-size:13px;padding:8px 12px" onkeydown="if(event.key==='Enter')addAllowedEmail()">
+      <button onclick="addAllowedEmail()" style="background:#2563eb;color:white;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;font-size:13px">+ הוסף</button>
     </div>
     <div id="settingsMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:600;text-align:center"></div>
   </div>
@@ -458,6 +466,10 @@
       <button class="tab-btn active" id="tab-compose" onclick="switchTab('compose')"><i class="fas fa-edit"></i> כתיבה</button>
       <button class="tab-btn" id="tab-history" onclick="switchTab('history')"><i class="fas fa-history"></i> היסטוריה</button>
       <button class="tab-btn" id="tab-groups" onclick="switchTab('groups')"><i class="fas fa-layer-group"></i> קבוצות</button>
+      <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')" style="position:relative">
+        <i class="fas fa-bullhorn"></i> מנהל
+        <span id="adminBadge" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ef4444;border-radius:50%;border:2px solid white"></span>
+      </button>
     </div>
   </div>
 </div>
@@ -537,10 +549,38 @@
 
 <div id="tabGroups" style="display:none" style="max-width:900px">
   <div class="card card-inner">
-    <div class="section-label mb-4">5 קבוצות מחוברות</div>
+    <div class="section-label mb-4" id="groupsTabTitle">קבוצות מחוברות</div>
     <div class="space-y-3" id="groupsList"></div>
   </div>
 </div>
+</div>
+
+<!-- ADMIN BROADCAST TAB -->
+<div id="tabAdmin" style="display:none;max-width:900px">
+  <!-- Send panel - shown only to david -->
+  <div id="adminSendPanel" style="display:none" class="card card-inner mb-4">
+    <div class="section-label">📢 שלח הודעת מנהל</div>
+    <textarea id="adminMsgInput" class="chat-textarea" style="width:100%;border-radius:12px;padding:12px;font-size:14px;margin-bottom:10px;min-height:80px;max-height:160px;resize:none" placeholder="כתוב הודעה לכל המנהלים..."></textarea>
+    <button onclick="sendAdminMsg()" class="send-btn send-btn-news" style="padding:12px"><i class="fas fa-bullhorn"></i> שלח לכולם</button>
+  </div>
+  <!-- Messages list -->
+  <div class="card card-inner">
+    <div class="flex items-center justify-between mb-4">
+      <div class="section-label mb-0">📋 הודעות מנהל</div>
+      <button onclick="markAdminRead()" id="markReadBtn" style="display:none;font-size:12px;color:#2563eb;font-weight:700;background:none;border:none;cursor:pointer"><i class="fas fa-check-double ml-1"></i>סמן הכל כנקרא</button>
+    </div>
+    <div id="adminMsgList"></div>
+  </div>
+</div>
+
+<!-- ADMIN POPUP NOTIFICATION -->
+<div id="adminPopup" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border-radius:16px;padding:14px 24px;box-shadow:0 12px 40px rgba(37,99,235,.5);display:flex;align-items:center;gap:12px;font-family:'Assistant',sans-serif;animation:slideDown .4s cubic-bezier(.34,1.4,.64,1)">
+  <i class="fas fa-bullhorn" style="font-size:18px"></i>
+  <div>
+    <div style="font-size:13px;font-weight:800">הודעת מנהל חדשה</div>
+    <div id="adminPopupText" style="font-size:12px;opacity:.85;margin-top:2px"></div>
+  </div>
+  <button onclick="document.getElementById('adminPopup').style.display='none'" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:4px 10px;color:white;cursor:pointer;font-size:12px;font-weight:700;font-family:'Assistant',sans-serif">✕</button>
 </div>
 
 <script>
@@ -549,18 +589,50 @@ const GOOGLE_CLIENT_ID = '426523025549-7c50rkn7cun4vmm2r802u0ij6egjehtg.apps.goo
 const SUPER_ADMIN = 'david@hamakom.ovh';
 const BACKEND = 'https://dhoc97909.pythonanywhere.com'; // כל הקריאות לשרת
 
-const GROUPS=[
+// GROUPS loaded from server dynamically
+let GROUPS=[];
+let webhooks={news:[],red:[]};
+
+// Default groups (migrated to server on first load)
+const DEFAULT_GROUPS=[
   {name:"שאגת הארי 1",news:"https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=a-hU9RlL6luYlpwqQa0aALnLv5zscJVJuDQsIFTN-Ww",red:"https://chat.googleapis.com/v1/spaces/AAQAgdDJy_E/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=PYjiKwQIa_Bba4r6z1GNhVeY8d4PHDkXX2FioLshmTM"},
   {name:"שאגת הארי 2",news:"https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=0IsavE-7n1IqwiJCj6kzyBAiDxeTUCpplfnDeqqrpXM",red:"https://chat.googleapis.com/v1/spaces/AAQAGhxWZZM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=XSYzDVnnjogvRb5sGtEyOFqit27exBbes9AB0NahAG8"},
   {name:"שאגת הארי 3",news:"https://chat.googleapis.com/v1/spaces/AAQAkM4XDNU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=PAI0uA9ePyGWD7wmj-Em0_Hg50IlGCMqDgyWFbuBAMY",red:"https://chat.googleapis.com/v1/spaces/AAQAkM4XDNU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=fT2bUfpZYK0WOjT2Q2KmGv0Ef7awtuMI_ZosDL7Nk0k"},
   {name:"שאגת הארי 4",news:"https://chat.googleapis.com/v1/spaces/AAQA2ZgN8EU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=y4Urz6YmmcaeCTygKNtxkl6ZESGwI5eXLP0nIjqGaHk",red:"https://chat.googleapis.com/v1/spaces/AAQA2ZgN8EU/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=_K_n_ZIqUHLQ3OY-nCQzvh80yAgBzcQMxlRLYA5dNuo"},
   {name:"שאגת הארי 5",news:"https://chat.googleapis.com/v1/spaces/AAQA2kXSw_o/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=MKdVwUsMFVCnsS78F14cYuSWxWM-atMNJNkO9ClUM8U",red:"https://chat.googleapis.com/v1/spaces/AAQA2kXSw_o/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=xMPl2mA36v7oSId4cqL3icZbySJjLffgFeJl9HInV5I"}
 ];
-const webhooks={news:GROUPS.map(g=>g.news),red:GROUPS.map(g=>g.red)};
+
+async function loadGroups(){
+  try{
+    const r=await fetch(BACKEND+'/webhooks_load');
+    const d=await r.json();
+    if(d.status==='success'&&d.groups&&d.groups.length){
+      GROUPS=d.groups;
+    } else {
+      // First time — migrate defaults to server
+      GROUPS=DEFAULT_GROUPS;
+      if(currentUser&&currentUser.email===SUPER_ADMIN.toLowerCase()){
+        await fetch(BACKEND+'/webhooks_save',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({groups:GROUPS,email:currentUser.email})});
+      }
+    }
+  }catch(e){GROUPS=DEFAULT_GROUPS;}
+  webhooks={news:GROUPS.map(g=>g.news).filter(Boolean),red:GROUPS.map(g=>g.red).filter(Boolean)};
+  updateGroupCounts();
+  renderGroupsList();
+}
+
+function updateGroupCounts(){
+  const newsCount=GROUPS.filter(g=>g.news).length;
+  const redCount=GROUPS.filter(g=>g.red).length;
+  document.getElementById('news-count').textContent=newsCount+' Webhooks';
+  document.getElementById('red-count').textContent=redCount+' Webhooks';
+}
 const PROFILES={news:{title:"מבזק חדשות",logo:"https://i.postimg.cc/zvyWy8wk/צילום_מסך_2026_03_01_031615.png"},red:{title:"צבע אדום",logo:"https://i.postimg.cc/ncKKRgq9/image.png"}};
 const EMERGENCY_KEYWORDS=["צבע אדום","התרעה","אזעקה","מרחב מוגן","ירי רקטות","חדירת מחבלים","נפילה"];
 let currentProfile='news',buttons=[],countdownTimer=null,driveAccessToken=null,driveFolderId=null;
-let msgHistory=JSON.parse(localStorage.getItem('msg_history')||'[]');
+let msgHistory=[];
 
 // ══ USER ══
 let currentUser=null;
@@ -591,6 +663,12 @@ async function handleGoogleLogin(resp){
   }
   currentUser={name:payload.name,email,picture:payload.picture||''};
   sessionStorage.setItem('lion_user',JSON.stringify(currentUser));
+  // Update picture on server so other admins see latest profile photo
+  try{
+    await fetch(BACKEND+'/allowed_update_picture',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,name:payload.name,picture:payload.picture||''})});
+  }catch(e){}
   showApp();
 }
 
@@ -611,9 +689,14 @@ function showApp(){
     const sb=document.getElementById('settingsBtn');
     sb.style.display='flex';
   }
-  document.getElementById('news-count').textContent=GROUPS.length+' Webhooks';
-  document.getElementById('red-count').textContent=GROUPS.length+' Webhooks';
-  renderGroupsList();renderHistory();
+  loadGroups(); // loads from server + renders
+  loadHistory();
+  loadAdminMsgs();
+  // Show admin send panel for super admin
+  if(currentUser.email===SUPER_ADMIN.toLowerCase()){
+    const panel=document.getElementById('adminSendPanel');
+    if(panel)panel.style.display='block';
+  }
   document.addEventListener('click',e=>{
     if(!e.target.closest('.dropdown-wrap'))closeAllDropdowns();
     if(!e.target.closest('#ctxMenu'))hideCtxMenu();
@@ -624,6 +707,7 @@ function showApp(){
   setInterval(loadChat,2000);
   setInterval(pingPresence,15000);
   setInterval(pollTyping,2000);
+  setInterval(loadAdminMsgs,5000);
 }
 
 function doLogout(){
@@ -656,22 +740,47 @@ function renderAllowedList(arr){
     el.innerHTML=`<div style="font-size:13px;color:#9ca3af;text-align:center;padding:12px">אין חשבונות נוספים</div>`;
     return;
   }
-  el.innerHTML=arr.map(email=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px">
-      <span style="font-size:13px;color:#374151;font-weight:600">${email}</span>
-      <button onclick="removeAllowedEmail('${email}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px;color:#dc2626;font-family:'Assistant',sans-serif;font-weight:600">הסר</button>
-    </div>`).join('');
+  el.innerHTML=arr.map(entry=>{
+    // support both old format (string) and new format (object)
+    const email=typeof entry==='string'?entry:(entry.email||entry);
+    const name=typeof entry==='object'?(entry.name||email):email;
+    const pic=typeof entry==='object'?(entry.picture||''):'';
+    const avatarHtml=pic
+      ?`<img src="${pic}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb" onerror="this.style.display='none'">`
+      :`<div style="width:32px;height:32px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white">${(name[0]||'?').toUpperCase()}</div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:9px 12px">
+      ${avatarHtml}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:#1f2937;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+        <div style="font-size:11px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${email}</div>
+      </div>
+      <button onclick="removeAllowedEmail('${email}')" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:12px;color:#dc2626;font-family:'Assistant',sans-serif;font-weight:600;flex-shrink:0">הסר</button>
+    </div>`;
+  }).join('');
 }
 
 async function addAllowedEmail(){
   const inp=document.getElementById('newEmailInput');
+  const nameInp=document.getElementById('newNameInput');
   const email=inp.value.trim().toLowerCase();
+  const displayName=(nameInp?nameInp.value.trim():'')||email;
   if(!email||!email.includes('@')){showSettingsMsg('אימייל לא תקין','red');return;}
+  // Try to get Google profile picture via People API
+  let picture='';
+  try{
+    // Use the email hash for gravatar as fallback — no API key needed
+    picture=''; // will be populated when user logs in themselves
+  }catch(e){}
   try{
     const r=await fetch(BACKEND+'/allowed_add',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({admin_email:currentUser.email,email})});
+      body:JSON.stringify({admin_email:currentUser.email,email,name:displayName,picture})});
     const d=await r.json();
-    if(d.status==='success'){inp.value='';renderAllowedList(d.emails);showSettingsMsg('נוסף ✓','green');}
+    if(d.status==='success'){
+      inp.value='';
+      if(nameInp)nameInp.value='';
+      renderAllowedList(d.emails);
+      showSettingsMsg('נוסף ✓','green');
+    }
     else showSettingsMsg(d.msg||'שגיאה','red');
   }catch(e){showSettingsMsg('שגיאת שרת','red');}
 }
@@ -976,25 +1085,87 @@ function init(){
 
 // ══ GROUPS ══
 function renderGroupsList(){
-  document.getElementById('groupsList').innerHTML=GROUPS.map(g=>`
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px">
-      <div style="font-size:13px;font-weight:700;color:#1f2937;margin-bottom:6px"><i class="fas fa-users" style="color:#6b7280;font-size:11px;margin-left:5px"></i>${g.name}</div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;font-weight:700;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:99px;padding:1px 7px">מבזק</span><span style="font-size:10px;color:#9ca3af;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;flex:1">${g.news.split('token=')[1]?.substring(0,20)}...</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;font-weight:700;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;padding:1px 7px">אדום</span><span style="font-size:10px;color:#9ca3af;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;flex:1">${g.red.split('token=')[1]?.substring(0,20)}...</span></div>
+  const c=document.getElementById('groupsList');
+  const isAdmin=currentUser&&currentUser.email===SUPER_ADMIN.toLowerCase();
+  const title=document.getElementById('groupsTabTitle');
+  if(title)title.textContent=GROUPS.length+' קבוצות מחוברות';
+
+  if(!GROUPS.length){
+    c.innerHTML=`<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px">אין קבוצות</div>`;
+    return;
+  }
+  c.innerHTML=GROUPS.map((g,i)=>`
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="font-size:14px;font-weight:700;color:#1f2937">${g.name}</div>
+        <div style="display:flex;gap:5px;align-items:center">
+          ${g.news?'<span style="font-size:10px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:99px;padding:2px 8px;font-weight:700">מבזק</span>':''}
+          ${g.red?'<span style="font-size:10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;padding:2px 8px;font-weight:700">אדום</span>':''}
+          ${isAdmin?`<button onclick="deleteGroup(${i})" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:3px 10px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:700;font-family:'Assistant',sans-serif"><i class="fas fa-trash"></i></button>`:''}
+        </div>
       </div>
+      ${isAdmin?`<div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="font-size:10px;color:#9ca3af;background:#f1f5f9;border-radius:8px;padding:4px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.news||''}">${g.news?'🔵 '+g.news.substring(0,30)+'…':'🔵 אין webhook'}</div>
+        <div style="font-size:10px;color:#9ca3af;background:#f1f5f9;border-radius:8px;padding:4px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.red||''}">${g.red?'🔴 '+g.red.substring(0,30)+'…':'🔴 אין webhook'}</div>
+      </div>`:''}
     </div>`).join('');
+
+  // Add "add group" form for admin
+  if(isAdmin){
+    c.innerHTML+=`
+    <div style="margin-top:16px;border-top:2px dashed #e5e7eb;padding-top:16px">
+      <div style="font-size:12px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">➕ הוסף קבוצה חדשה</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input id="newGroupName" type="text" placeholder="שם הקבוצה" class="input-field" style="font-size:13px;padding:8px 12px">
+        <input id="newGroupNews" type="text" placeholder="Webhook מבזק חדשות (אופציונלי)" class="input-field" style="font-size:12px;padding:8px 12px;direction:ltr">
+        <input id="newGroupRed" type="text" placeholder="Webhook צבע אדום (אופציונלי)" class="input-field" style="font-size:12px;padding:8px 12px;direction:ltr">
+        <button onclick="addGroup()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;font-size:13px">הוסף קבוצה</button>
+      </div>
+    </div>`;
+  }
+}
+
+async function addGroup(){
+  const name=document.getElementById('newGroupName').value.trim();
+  const news=document.getElementById('newGroupNews').value.trim();
+  const red=document.getElementById('newGroupRed').value.trim();
+  if(!name){alert('חסר שם קבוצה');return;}
+  if(!news&&!red){alert('יש להזין לפחות webhook אחד');return;}
+  GROUPS.push({name,news,red});
+  await saveGroups();
+  document.getElementById('newGroupName').value='';
+  document.getElementById('newGroupNews').value='';
+  document.getElementById('newGroupRed').value='';
+  renderGroupsList();updateGroupCounts();
+}
+
+async function deleteGroup(idx){
+  if(!confirm('למחוק את הקבוצה "'+GROUPS[idx].name+'"?'))return;
+  GROUPS.splice(idx,1);
+  await saveGroups();
+  renderGroupsList();updateGroupCounts();
+}
+
+async function saveGroups(){
+  webhooks={news:GROUPS.map(g=>g.news).filter(Boolean),red:GROUPS.map(g=>g.red).filter(Boolean)};
+  try{
+    await fetch(BACKEND+'/webhooks_save',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({groups:GROUPS,email:currentUser.email})});
+  }catch(e){console.error('Failed to save groups',e);}
 }
 
 // ══ TABS ══
 function switchTab(tab){
-  ['compose','history','groups'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  ['compose','history','groups','admin'].forEach(t=>{
+    const btn=document.getElementById('tab-'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
     const el=document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
-    el.style.display=(t===tab)?'block':'none';
+    if(el)el.style.display=(t===tab)?'block':'none';
   });
-  if(tab==='history')renderHistory();
+  if(tab==='history'){loadHistory();}
   if(tab==='groups')renderGroupsList();
+  if(tab==='admin'){loadAdminMsgs();markAdminRead();}
 }
 
 // ══ PROFILE ══
@@ -1063,12 +1234,213 @@ function hideStatus(){animateModalOut('modalStatus');}
 
 async function uploadImageFile(file){const apiKey=document.getElementById('imgbbApiKey').value.trim();if(!apiKey||!file)return;showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);try{const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','',false,60);const form=new FormData();form.append('key',apiKey);form.append('image',base64);const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});const data=await res.json();if(data.success){document.getElementById('newsImgUrl').value=data.data.url;updateImgThumb();updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','',false,100);setTimeout(hideStatus,1800);}else throw new Error(data.error?.message||'שגיאה');}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'',false,0);setTimeout(hideStatus,3000);}}
 async function uploadVideoFile(file){if(!file)return;showStatus('fab fa-google','מתחבר ל-Drive...','נא אשר גישה','',false,5);let token;try{token=await getDriveToken();}catch(e){updateStatus('fas fa-times-circle','שגיאת כניסה',e.message,'',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-folder-open','מאתר תיקייה...','סרטוני מבזק','',false,20);let folderId;try{folderId=await getOrCreateFolder(token);}catch(e){updateStatus('fas fa-times-circle','שגיאת תיקייה',e.message,'',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-cloud-upload-alt','מעלה לDrive...',file.name,'',false,50);try{const metadata={name:file.name,mimeType:file.type,parents:[folderId]};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));form.append('file',file);const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});if(!res.ok)throw new Error('שגיאת העלאה: '+res.status);const{id}=await res.json();document.getElementById('videoUrl').value=`https://drive.google.com/file/d/${id}/view`;updateVidInfo();updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','',false,100);setTimeout(hideStatus,2500);}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'',false,0);setTimeout(hideStatus,3000);}}
-function getDriveToken(){return new Promise((resolve,reject)=>{if(driveAccessToken){resolve(driveAccessToken);return;}const clientId=document.getElementById('googleClientId').value.trim();const client=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.file',callback:(resp)=>{if(resp.error){reject(new Error(resp.error));return;}driveAccessToken=resp.access_token;resolve(driveAccessToken);}});client.requestAccessToken();});}
+function getDriveToken(){return new Promise((resolve,reject)=>{
+  // Check in-memory first
+  if(driveAccessToken){resolve(driveAccessToken);return;}
+  // Check sessionStorage (survives page reload within same tab session)
+  const cached=sessionStorage.getItem('drive_token');
+  const cachedExp=parseInt(sessionStorage.getItem('drive_token_exp')||'0');
+  if(cached&&Date.now()<cachedExp){driveAccessToken=cached;resolve(cached);return;}
+  const clientId=document.getElementById('googleClientId').value.trim();
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:clientId,
+    scope:'https://www.googleapis.com/auth/drive.file',
+    callback:(resp)=>{
+      if(resp.error){reject(new Error(resp.error));return;}
+      driveAccessToken=resp.access_token;
+      // Cache for ~55 minutes (tokens last 60min)
+      sessionStorage.setItem('drive_token',resp.access_token);
+      sessionStorage.setItem('drive_token_exp',String(Date.now()+55*60*1000));
+      resolve(driveAccessToken);
+    }
+  });
+  client.requestAccessToken();
+});}
 async function getOrCreateFolder(token){if(driveFolderId)return driveFolderId;const sr=await fetch(`https://www.googleapis.com/drive/v3/files?q=name%3D'סרטוני+מבזק'+and+mimeType%3D'application%2Fvnd.google-apps.folder'+and+trashed%3Dfalse&fields=files(id,name)`,{headers:{Authorization:`Bearer ${token}`}});if(sr.ok){const d=await sr.json();if(d.files&&d.files.length>0){driveFolderId=d.files[0].id;return driveFolderId;}}const fr=await fetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({name:'סרטוני מבזק',mimeType:'application/vnd.google-apps.folder'})});if(!fr.ok)throw new Error('שגיאה ביצירת תיקייה: '+fr.status);const f=await fr.json();driveFolderId=f.id;return driveFolderId;}
 
-function addToHistory(profile,text,imgUrl,videoUrl,groupCount){msgHistory.unshift({id:Date.now(),profile,text:text||'(ללא טקסט)',imgUrl,videoUrl,groupCount,time:new Date().toLocaleString('he-IL')});if(msgHistory.length>50)msgHistory.pop();localStorage.setItem('msg_history',JSON.stringify(msgHistory));}
-function renderHistory(){const c=document.getElementById('historyList');if(!msgHistory.length){c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;return;}c.innerHTML=msgHistory.map(e=>`<div class="history-item"><div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0"><p class="text-sm text-gray-700 leading-relaxed">${e.text}</p><div class="flex items-center gap-2 mt-2 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${e.profile==='news'?'bg-blue-50 text-blue-600 border border-blue-200':'bg-red-50 text-red-600 border border-red-200'}">${e.profile==='news'?'מבזק חדשות':'צבע אדום'}</span><span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}</div></div><div class="text-xs text-gray-400 whitespace-nowrap">${e.time}</div></div></div>`).join('');}
-function clearHistory(){if(!confirm('למחוק את כל ההיסטוריה?'))return;msgHistory=[];localStorage.setItem('msg_history','[]');renderHistory();}
+// ══ HISTORY (server-side, shared) ══
+async function addToHistory(profile,text,imgUrl,videoUrl,groupCount){
+  const entry={
+    id:Date.now(),profile,text:text||'(ללא טקסט)',
+    imgUrl,videoUrl,groupCount,
+    time:new Date().toLocaleString('he-IL'),
+    sender:chatUserName,
+    senderPicture:chatUserPicture,
+    senderEmail:chatUserEmail
+  };
+  msgHistory.unshift(entry);
+  if(msgHistory.length>100)msgHistory.pop();
+  try{
+    await fetch(BACKEND+'/history_save',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({history:msgHistory,email:chatUserEmail})});
+  }catch(e){}
+}
+
+async function loadHistory(){
+  try{
+    const r=await fetch(BACKEND+'/history_load');
+    const d=await r.json();
+    if(d.status==='success')msgHistory=d.history||[];
+  }catch(e){}
+  renderHistory();
+}
+
+function renderHistory(){
+  const c=document.getElementById('historyList');
+  if(!msgHistory.length){
+    c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i><p class="text-sm">עדיין לא נשלחו הודעות</p></div>`;
+    return;
+  }
+  const COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
+  const col=s=>COLORS[(s||'').charCodeAt(0)%COLORS.length];
+  c.innerHTML=msgHistory.map(e=>{
+    const senderName=e.sender||'לא ידוע';
+    const senderPic=e.senderPicture||'';
+    const avatarHtml=senderPic
+      ? `<img src="${senderPic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : `<span>${senderName[0].toUpperCase()}</span>`;
+    return `<div class="history-item">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:50%;background:${col(senderName)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
+        <span style="font-size:12px;font-weight:700;color:#374151">${senderName}</span>
+        <span style="font-size:11px;color:#9ca3af;margin-right:auto">${e.time}</span>
+      </div>
+      <div class="flex items-start gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-700 leading-relaxed">${e.text}</p>
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${e.profile==='news'?'bg-blue-50 text-blue-600 border border-blue-200':'bg-red-50 text-red-600 border border-red-200'}">${e.profile==='news'?'מבזק חדשות':'צבע אדום'}</span>
+            <span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>
+            ${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}
+            ${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function clearHistory(){
+  if(!confirm('למחוק את כל ההיסטוריה?'))return;
+  msgHistory=[];
+  try{await fetch(BACKEND+'/history_save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({history:[],email:chatUserEmail})});}catch(e){}
+  renderHistory();
+}
+
+// ══ ADMIN BROADCAST ══
+let lastAdminId='';
+let adminUnread=0;
+
+async function sendAdminMsg(){
+  const inp=document.getElementById('adminMsgInput');
+  const text=inp.value.trim();
+  if(!text||!currentUser)return;
+  try{
+    await fetch(BACKEND+'/admin_send',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,sender:chatUserName,picture:chatUserPicture,email:chatUserEmail})});
+    inp.value='';
+    loadAdminMsgs();
+  }catch(e){alert('שגיאה בשליחה');}
+}
+
+async function deleteAdminMsg(id){
+  if(!confirm('למחוק הודעה זו?'))return;
+  try{
+    await fetch(BACKEND+'/admin_delete',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id,email:chatUserEmail})});
+    loadAdminMsgs();
+  }catch(e){}
+}
+
+async function loadAdminMsgs(){
+  try{
+    const r=await fetch(BACKEND+'/admin_list');
+    const d=await r.json();
+    const msgs=d.messages||[];
+    renderAdminMsgs(msgs);
+    checkNewAdminMsgs(msgs);
+  }catch(e){}
+}
+
+function checkNewAdminMsgs(msgs){
+  if(!msgs.length){lastAdminId='';return;}
+  const topId=msgs[0].id;
+  const lastSeen=localStorage.getItem('admin_last_seen')||'0';
+  // Only popup if this is a truly new message since last check AND we've already initialized
+  if(lastAdminId && topId !== lastAdminId){
+    const newest=msgs[0];
+    if(newest.email!==chatUserEmail && newest.id > lastSeen){
+      showAdminPopup(newest);
+    }
+  }
+  // Count unread
+  const unread=msgs.filter(m=>m.id>lastSeen&&m.email!==chatUserEmail).length;
+  adminUnread=unread;
+  updateAdminBadge();
+  lastAdminId=topId;
+}
+
+function showAdminPopup(msg){
+  const popup=document.getElementById('adminPopup');
+  document.getElementById('adminPopupText').textContent=msg.sender+': '+msg.text.substring(0,60)+(msg.text.length>60?'…':'');
+  popup.style.display='flex';
+  // Auto-hide after 5s
+  setTimeout(()=>{popup.style.display='none';},5000);
+}
+
+function updateAdminBadge(){
+  const badge=document.getElementById('adminBadge');
+  const markBtn=document.getElementById('markReadBtn');
+  if(adminUnread>0){
+    badge.style.display='block';
+    if(markBtn)markBtn.style.display='inline-block';
+  } else {
+    badge.style.display='none';
+    if(markBtn)markBtn.style.display='none';
+  }
+}
+
+function markAdminRead(){
+  if(!lastAdminId)return;
+  localStorage.setItem('admin_last_seen',lastAdminId);
+  adminUnread=0;
+  updateAdminBadge();
+  loadAdminMsgs();
+}
+
+function renderAdminMsgs(msgs){
+  const c=document.getElementById('adminMsgList');
+  if(!c)return;
+  if(!msgs.length){
+    c.innerHTML=`<div class="text-center py-12 text-gray-400"><i class="fas fa-bullhorn text-4xl mb-3 block opacity-20"></i><p class="text-sm">אין הודעות מנהל עדיין</p></div>`;
+    return;
+  }
+  const lastSeen=localStorage.getItem('admin_last_seen')||'';
+  const COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
+  const col=s=>COLORS[(s||'').charCodeAt(0)%COLORS.length];
+  const isAdmin=currentUser&&currentUser.email===SUPER_ADMIN.toLowerCase();
+  c.innerHTML=msgs.map(m=>{
+    const unread=m.id>lastSeen&&m.email!==chatUserEmail;
+    const avatarHtml=m.picture
+      ?`<img src="${m.picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      :`<span>${(m.sender||'?')[0].toUpperCase()}</span>`;
+    return `<div class="admin-msg-item ${unread?'unread':'read'}">
+      <div class="admin-msg-sender">
+        <div class="admin-msg-avatar" style="background:${col(m.sender)}">${avatarHtml}</div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#1f2937">${m.sender}</div>
+          <div style="font-size:11px;color:#9ca3af">${m.time}</div>
+        </div>
+        ${unread?'<span style="margin-right:auto;background:#eff6ff;color:#2563eb;font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;border:1px solid #bfdbfe">חדש</span>':''}
+        ${isAdmin?`<button onclick="deleteAdminMsg('${m.id}')" style="margin-right:auto;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:3px 10px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:700;font-family:'Assistant',sans-serif"><i class="fas fa-trash"></i></button>`:''}
+      </div>
+      <p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap">${m.text}</p>
+    </div>`;
+  }).join('');
+}
 function showToast(msg,type='info'){const colors={info:'bg-gray-800',error:'bg-red-600',success:'bg-green-600'};const t=document.createElement('div');t.className=`fixed bottom-6 left-1/2 -translate-x-1/2 ${colors[type]} text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl z-[200]`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
 
 init();
