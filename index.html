@@ -750,6 +750,9 @@ async function handleGoogleLogin(resp){
 
 function showApp(){
   document.getElementById('loginScreen').style.display='none';
+  // Unlock audio on first user interaction
+  document.addEventListener('click', unlockAudio, {once:true});
+  document.addEventListener('keydown', unlockAudio, {once:true});
   chatUserName=currentUser.name;
   chatUserPicture=currentUser.picture||'';
   chatUserEmail=currentUser.email||'';
@@ -1406,12 +1409,23 @@ function animateModalOut(id){const el=document.getElementById(id);el.classList.a
 
 // ══ NOTIFICATION SOUND ══
 let notifAudio=null;
+let audioUnlocked=false;
+
+function unlockAudio(){
+  if(audioUnlocked)return;
+  audioUnlocked=true;
+  // Create and "play" silently on first user gesture to unlock audio context
+  notifAudio=new Audio('https://s3.prog.co.il/data/audio/2198/2198881-1f1b3f162a485d9f87a80120cc03ee52.mp3');
+  notifAudio.volume=0.5;
+  notifAudio.load();
+  // Play+pause trick to unlock
+  const p=notifAudio.play();
+  if(p)p.then(()=>{notifAudio.pause();notifAudio.currentTime=0;}).catch(()=>{});
+}
+
 function playNotifSound(){
+  if(!notifAudio)return;
   try{
-    if(!notifAudio){
-      notifAudio=new Audio('https://s3.prog.co.il/data/audio/2198/2198881-1f1b3f162a485d9f87a80120cc03ee52.mp3');
-      notifAudio.volume=0.5;
-    }
     notifAudio.currentTime=0;
     notifAudio.play().catch(()=>{});
   }catch(e){}
