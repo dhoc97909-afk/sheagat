@@ -647,10 +647,21 @@ function initGoogleLogin(){
 }
 
 async function handleGoogleLogin(resp){
-  // Proper UTF-8 decode of JWT (atob alone garbles Hebrew/unicode)
-  const b64=resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-  const payload=JSON.parse(decodeURIComponent(atob(b64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+  // Decode JWT - only use email and picture (name from Google is often garbled)
+  const parts=resp.credential.split('.');
+  let payload={};
+  try{
+    // Simple base64 decode - we only need email + picture (ASCII/URL fields)
+    const raw=parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    payload=JSON.parse(atob(raw));
+  }catch(e){
+    document.getElementById('loginError').textContent='שגיאת כניסה';
+    document.getElementById('loginError').style.display='block';
+    return;
+  }
   const email=(payload.email||'').toLowerCase();
+  const picture=payload.picture||'';
+
   // Check with SERVER
   try{
     const r=await fetch(BACKEND+'/auth_check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
@@ -660,29 +671,33 @@ async function handleGoogleLogin(resp){
       return;
     }
   }catch(e){
-    // If server unreachable, still block
     document.getElementById('loginError').textContent='שגיאת שרת, נסה שוב';
     document.getElementById('loginError').style.display='block';
     return;
   }
-  // Get display name from server (admin may have set a custom name)
-  let displayName=payload.name;
+
+  // Get display name ONLY from server allowed_list (set by admin = no garbling)
+  let displayName='';
   try{
     const lr=await fetch(BACKEND+'/allowed_list');
     const ld=await lr.json();
     const entries=ld.emails||[];
     const myEntry=entries.find(e=>typeof e==='object'&&e.email===email);
     if(myEntry&&myEntry.name&&myEntry.name!==email){
-      displayName=myEntry.name; // use admin-set name
+      displayName=myEntry.name;
     }
   }catch(e){}
-  currentUser={name:displayName,email,picture:payload.picture||''};
+
+  // Fallback: use email prefix (before @) - always ASCII, never garbled
+  if(!displayName) displayName=email.split('@')[0];
+
+  currentUser={name:displayName,email,picture};
   sessionStorage.setItem('lion_user',JSON.stringify(currentUser));
-  // Update picture (and name if not overridden) on server
+  // Save picture to server for other admins to see
   try{
     await fetch(BACKEND+'/allowed_update_picture',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,name:displayName,picture:payload.picture||''})});
+      body:JSON.stringify({email,name:displayName,picture})});
   }catch(e){}
   showApp();
 }
