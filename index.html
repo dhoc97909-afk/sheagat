@@ -436,7 +436,7 @@
         </div>
       </div>
     </div>
-    <div style="font-size:20px">💬</div>
+    
   </div>
   <div id="pinnedBar" onclick="scrollToPinned()">
     <i class="fas fa-thumbtack pinned-icon"></i>
@@ -1253,11 +1253,19 @@ function renderTypingBubbles(typers){
     // Bubble
     const bub=document.createElement('div');
     bub.className='typing-bubble';
-    bub.innerHTML=`<div class="typing-name">${esc(name)}</div>
-      <div class="typing-dots"><span></span><span></span><span></span></div>`;
+    bub.innerHTML=`<div class="typing-dots"><span></span><span></span><span></span></div>`;
 
+    // Name + bubbles column
+    const colEl=document.createElement('div');
+    colEl.style.cssText='display:flex;flex-direction:column;gap:2px';
+    const nameEl=document.createElement('div');
+    nameEl.className='sender-name';
+    nameEl.style.color=col(name);
+    nameEl.textContent=name;
+    colEl.appendChild(nameEl);
+    colEl.appendChild(bub);
     wrap.appendChild(avEl);
-    wrap.appendChild(bub);
+    wrap.appendChild(colEl);
     box.appendChild(wrap);
   });
 
@@ -1517,7 +1525,7 @@ function renderButtons(){document.getElementById('buttonsList').innerHTML=button
 // ══ SEND ══
 function initiateSend(){const text=document.getElementById('editor').innerText.trim();if(!text&&!document.getElementById('newsImgUrl').value){showToast('הודעה ריקה','error');return;}closeAllDropdowns();const hasKw=EMERGENCY_KEYWORDS.some(w=>text.includes(w));if(currentProfile==='news'&&hasKw){animateModalIn('modalEmergency');return;}startCountdown();}
 function handleModal(choice){animateModalOut('modalEmergency');if(choice==='switch'){setProfile('red');startCountdown();}else if(choice==='continue')startCountdown();}
-function startCountdown(){let t=2;const n=webhooks[currentProfile].length;showStatus('fas fa-clock','מכין שליחה...',`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`,true,false,0);countdownTimer=setInterval(()=>{t--;if(t>0){document.getElementById('statusDesc').textContent=`ההודעה תישלח בעוד ${t} שניות ל-${n} קבוצות`;}else{clearInterval(countdownTimer);document.getElementById('statusCancelWrap').classList.add('hidden');executeActualSend();}},1000);}
+function startCountdown(){executeActualSend();}
 function cancelSend(){clearInterval(countdownTimer);hideStatus();showToast('השליחה בוטלה','info');}
 async function executeActualSend(){
   const n=webhooks[currentProfile].length;
@@ -1620,23 +1628,17 @@ function renderHistory(){
   }
   const HCOLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
   const hcol=s=>HCOLORS[(s||'').charCodeAt(0)%HCOLORS.length];
-  const isAdmin=currentUser&&currentUser.email===SUPER_ADMIN.toLowerCase();
   c.innerHTML=msgHistory.map(e=>{
     const senderName=e.sender||'לא ידוע';
     const senderPic=e.senderPicture||'';
-    const canDelete=isAdmin||(e.senderEmail&&e.senderEmail===chatUserEmail);
     const avatarHtml=senderPic
       ? `<img src="${senderPic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : `<span>${(senderName[0]||'?').toUpperCase()}</span>`;
-    const hasGoogleMsgs=(e.msgNames||[]).length>0;
-    return `<div class="history-item" id="hist-${e.id}">
+    return `<div class="history-item">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <div style="width:28px;height:28px;border-radius:50%;background:${hcol(senderName)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
         <span style="font-size:12px;font-weight:700;color:#374151">${senderName}</span>
         <span style="font-size:11px;color:#9ca3af;margin-right:auto">${e.time}</span>
-        ${canDelete?`<button onclick="deleteHistoryEntry(${e.id})" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:4px 10px;font-size:11px;color:#dc2626;cursor:pointer;font-weight:700;font-family:'Assistant',sans-serif;display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <i class="fas fa-trash" style="font-size:10px"></i>${hasGoogleMsgs?'מחק מקבוצות':'מחק'}
-        </button>`:''}
       </div>
       <div class="flex items-start gap-3">
         <div class="flex-1 min-w-0">
@@ -1646,53 +1648,11 @@ function renderHistory(){
             <span class="text-xs text-gray-400"><i class="fas fa-users ml-1"></i>${e.groupCount} קבוצות</span>
             ${e.imgUrl?'<span class="text-xs text-gray-400"><i class="fas fa-image ml-1"></i>תמונה</span>':''}
             ${e.videoUrl?'<span class="text-xs text-gray-400"><i class="fas fa-video ml-1"></i>סרטון</span>':''}
-            ${hasGoogleMsgs?`<span class="text-xs text-green-600"><i class="fas fa-check ml-1"></i>ניתן למחיקה מגוגל</span>`:'<span class="text-xs text-gray-400"><i class="fas fa-times ml-1"></i>לא ניתן למחוק מגוגל</span>'}
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
-}
-
-async function deleteHistoryEntry(id){
-  const entry=msgHistory.find(e=>e.id===id);
-  if(!entry)return;
-  const hasGoogle=(entry.msgNames||[]).length>0;
-  const confirmMsg=hasGoogle
-    ?`למחוק את ההודעה גם מ-${entry.msgNames.length} קבוצות גוגל?`
-    :'למחוק מההיסטוריה? (ההודעה נשארת בקבוצות)';
-  if(!confirm(confirmMsg))return;
-
-  // Show progress
-  const btn=document.querySelector(`#hist-${id} button`);
-  if(btn){btn.disabled=true;btn.textContent='מוחק...';}
-
-  // Delete from Google Chat groups
-  if(hasGoogle){
-    let deleted=0,failed=0;
-    for(const m of entry.msgNames){
-      try{
-        // Extract key+token from webhook URL
-        const wUrl=new URL(m.webhook);
-        const key=wUrl.searchParams.get('key');
-        const token=wUrl.searchParams.get('token');
-        const deleteUrl=`https://chat.googleapis.com/v1/${m.msgName}?key=${key}&token=${encodeURIComponent(token)}`;
-        const r=await fetch(deleteUrl,{method:'DELETE'});
-        if(r.ok||r.status===200)deleted++;
-        else failed++;
-      }catch(e){failed++;}
-    }
-    if(failed>0)alert(`נמחק מ-${deleted} קבוצות, נכשל ב-${failed} קבוצות`);
-  }
-
-  // Remove from local history + save
-  msgHistory=msgHistory.filter(e=>e.id!==id);
-  try{
-    await fetch(BACKEND+'/history_save',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({history:msgHistory,email:chatUserEmail})});
-  }catch(e){}
-  renderHistory();
 }
 
 async function clearHistory(){
