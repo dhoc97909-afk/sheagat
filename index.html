@@ -647,7 +647,9 @@ function initGoogleLogin(){
 }
 
 async function handleGoogleLogin(resp){
-  const payload=JSON.parse(atob(resp.credential.split('.')[1]));
+  // Proper UTF-8 decode of JWT (atob alone garbles Hebrew/unicode)
+  const b64=resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+  const payload=JSON.parse(decodeURIComponent(atob(b64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
   const email=(payload.email||'').toLowerCase();
   // Check with SERVER
   try{
@@ -897,7 +899,14 @@ function renderChat(msgs){
       avEl.className='msg-group-avatar';
       avEl.style.background=col(grp.sender);
       if(grp.picture){
-        avEl.innerHTML=`<img src="${grp.picture}" onerror="this.style.display='none';this.parentElement.textContent='${grp.sender[0].toUpperCase()}'">`;
+        const imgEl=document.createElement('img');
+        imgEl.src=grp.picture;
+        imgEl.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+        imgEl.onerror=function(){
+          this.style.display='none';
+          avEl.textContent=(grp.sender||'?')[0].toUpperCase();
+        };
+        avEl.appendChild(imgEl);
       } else {
         avEl.textContent=(grp.sender||'?')[0].toUpperCase();
       }
