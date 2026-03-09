@@ -303,7 +303,7 @@
     .send-btn-red:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(220,38,38,.45)}
 
     /* Modals */
-    .modal-backdrop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none}
+    .modal-backdrop{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none}
     .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .4s,backdrop-filter .4s}
     .modal-box{background:white;border-radius:28px;padding:32px;max-width:360px;width:100%;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.28);opacity:0;transform:scale(.82) translateY(48px);transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1)}
     .modal-backdrop.open{pointer-events:all}
@@ -458,6 +458,10 @@
     <button onclick="cancelReply()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">✕</button>
   </div>
   <div id="mentionBox"></div>
+  <div style="padding:4px 12px 0;display:flex;gap:4px">
+    <button onclick="insertChatFormat('bold')" title="הדגשה" style="background:none;border:1px solid #e5e7eb;border-radius:7px;width:28px;height:28px;cursor:pointer;font-weight:800;font-size:13px;color:#374151;display:flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()"><b>B</b></button>
+    <button onclick="insertChatFormat('italic')" title="נטייה" style="background:none;border:1px solid #e5e7eb;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:13px;color:#374151;display:flex;align-items:center;justify-content:center" onmousedown="event.preventDefault()"><i>I</i></button>
+  </div>
   <div class="chat-input-area">
     <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="הקלד הודעה..."
       onkeydown="handleChatKey(event)"
@@ -579,7 +583,10 @@
       <span id="keywordAlert" class="text-orange-500 font-semibold hidden"><i class="fas fa-exclamation-triangle ml-1"></i>זוהתה מילת חירום</span>
     </div>
   </div>
-  <div><button id="sendBtn" onclick="initiateSend()" class="send-btn send-btn-news"><i class="fas fa-paper-plane"></i> שלח כעת</button></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button onclick="insertLaunchTemplate()" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;border:none;border-radius:14px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:'Assistant',sans-serif;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.3)"><i class="fas fa-rocket"></i> שיגור</button>
+    <button id="sendBtn" onclick="initiateSend()" class="send-btn send-btn-news"><i class="fas fa-paper-plane"></i> שלח כעת</button>
+  </div>
 </div>
 
 <div id="tabHistory" style="display:none" style="max-width:900px">
@@ -888,6 +895,18 @@ let chatReplyTo=null,lastIds='';
 const COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
 const col=s=>COLORS[(s||'').charCodeAt(0)%COLORS.length];
 const esc=t=>(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+function renderMsgText(t){
+  if(!t)return'';
+  // Escape HTML first
+  let s=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // Bold: *text*
+  s=s.replace(/\*([^*\n]+)\*/g,'<strong>$1</strong>');
+  // Italic: _text_
+  s=s.replace(/\_([^_\n]+)\_/g,'<em>$1</em>');
+  // Linkify URLs
+  s=s.replace(/(https?:\/\/[^\s<>"']+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;word-break:break-all" onclick="event.stopPropagation()">$1</a>');
+  return s;
+}
 const escA=t=>(t||'').replace(/'/g,'&#39;').replace(/\n/g,' ').replace(/"/g,'&quot;');
 
 // ══ PRESENCE ══
@@ -1053,7 +1072,7 @@ function renderChat(msgs){
         const rc=isMe?'reply-preview':'reply-preview dark';
         inner+=`<div class="${rc}"><strong>${esc(msg.replyTo.sender)}</strong>${esc(rt.substring(0,50))}${rt.length>50?'…':''}</div>`;
       }
-      inner+=`<span>${esc(msg.text)}</span>`;
+      inner+=`<span>${renderMsgText(msg.text)}</span>`;
       bEl.innerHTML=inner;
       bEl.addEventListener('dblclick',e=>{e.preventDefault();showCtxMenu(e,msg,isMe);});
 
@@ -1293,6 +1312,24 @@ function renderTypingBubbles(typers){
   });
 
   if(atBottom) box.scrollTop=box.scrollHeight;
+}
+
+// ══ CHAT FORMATTING ══
+function insertChatFormat(type){
+  const ta=document.getElementById('chatInput');
+  const start=ta.selectionStart,end=ta.selectionEnd;
+  const sel=ta.value.substring(start,end);
+  const marker=type==='bold'?'*':'_';
+  if(sel){
+    // wrap selection
+    ta.value=ta.value.substring(0,start)+marker+sel+marker+ta.value.substring(end);
+    ta.selectionStart=start;ta.selectionEnd=end+2;
+  } else {
+    // insert markers and put cursor between
+    ta.value=ta.value.substring(0,start)+marker+marker+ta.value.substring(end);
+    ta.selectionStart=ta.selectionEnd=start+1;
+  }
+  ta.focus();
 }
 
 // ══ MENTION AUTOCOMPLETE ══
@@ -1570,6 +1607,20 @@ function removeButton(id){buttons=buttons.filter(b=>b.id!==id);renderButtons();}
 function renderButtons(){document.getElementById('buttonsList').innerHTML=buttons.map(b=>`<div class="flex items-center gap-2 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl text-sm"><i class="fas fa-mouse-pointer text-orange-400 text-xs"></i><span class="font-semibold text-orange-700">${b.text}</span><button onclick="removeButton(${b.id})" class="text-red-400 hover:text-red-600 mr-auto"><i class="fas fa-times text-xs"></i></button></div>`).join('');}
 
 // ══ SEND ══
+function insertLaunchTemplate(){
+  const ed=document.getElementById('editor');
+  ed.innerHTML='זוהו שיגורים מאיראן, הפרטים בבדיקה. יש להישמע להנחיות פיקוד העורף. המשך דיווחים מיד';
+  onEditorChange();
+  ed.focus();
+  // Place cursor at end
+  const range=document.createRange();
+  const sel=window.getSelection();
+  range.selectNodeContents(ed);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 function initiateSend(){const text=document.getElementById('editor').innerText.trim();if(!text&&!document.getElementById('newsImgUrl').value){showToast('הודעה ריקה','error');return;}closeAllDropdowns();const hasKw=EMERGENCY_KEYWORDS.some(w=>text.includes(w));if(currentProfile==='news'&&hasKw){animateModalIn('modalEmergency');return;}startCountdown();}
 function handleModal(choice){animateModalOut('modalEmergency');if(choice==='switch'){setProfile('red');startCountdown();}else if(choice==='continue')startCountdown();}
 function startCountdown(){executeActualSend();}
