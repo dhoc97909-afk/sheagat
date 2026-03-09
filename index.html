@@ -553,7 +553,6 @@
     <div class="space-y-3" id="groupsList"></div>
   </div>
 </div>
-</div>
 
 <!-- ADMIN BROADCAST TAB -->
 <div id="tabAdmin" style="display:none;max-width:900px">
@@ -572,6 +571,9 @@
     <div id="adminMsgList"></div>
   </div>
 </div>
+
+</div>
+
 
 <!-- ADMIN POPUP NOTIFICATION -->
 <div id="adminPopup" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border-radius:16px;padding:14px 24px;box-shadow:0 12px 40px rgba(37,99,235,.5);align-items:center;gap:12px;font-family:'Assistant',sans-serif">
@@ -661,13 +663,24 @@ async function handleGoogleLogin(resp){
     document.getElementById('loginError').style.display='block';
     return;
   }
-  currentUser={name:payload.name,email,picture:payload.picture||''};
+  // Get display name from server (admin may have set a custom name)
+  let displayName=payload.name;
+  try{
+    const lr=await fetch(BACKEND+'/allowed_list');
+    const ld=await lr.json();
+    const entries=ld.emails||[];
+    const myEntry=entries.find(e=>typeof e==='object'&&e.email===email);
+    if(myEntry&&myEntry.name&&myEntry.name!==email){
+      displayName=myEntry.name; // use admin-set name
+    }
+  }catch(e){}
+  currentUser={name:displayName,email,picture:payload.picture||''};
   sessionStorage.setItem('lion_user',JSON.stringify(currentUser));
-  // Update picture on server so other admins see latest profile photo
+  // Update picture (and name if not overridden) on server
   try{
     await fetch(BACKEND+'/allowed_update_picture',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,name:payload.name,picture:payload.picture||''})});
+      body:JSON.stringify({email,name:displayName,picture:payload.picture||''})});
   }catch(e){}
   showApp();
 }
