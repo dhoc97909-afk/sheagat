@@ -357,23 +357,31 @@
     .admin-msg-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:white;flex-shrink:0}
     .admin-msg-avatar img{width:100%;height:100%;object-fit:cover}
 
-    /* ── TYPING INDICATOR ── */
-    .typing-indicator{
-      display:none;padding:6px 14px 2px;
-      font-size:12px;color:#6b7280;
-      align-items:center;gap:6px;
-      flex-shrink:0;background:#f7f8fc;
+    /* ── TYPING BUBBLE ── */
+    .typing-indicator{display:none}/* hidden — replaced by in-feed bubble */
+    .typing-bubble-wrap{
+      display:flex;align-items:flex-end;gap:8px;
+      margin-bottom:4px;margin-top:6px;
+      animation:pop .2s cubic-bezier(.34,1.4,.64,1);
     }
-    .typing-indicator.show{display:flex}
-    .typing-dots{display:inline-flex;gap:3px;align-items:center}
+    .typing-bubble{
+      background:rgba(255,255,255,0.88);
+      border-radius:4px 18px 18px 18px;
+      padding:10px 16px;
+      box-shadow:0 1px 4px rgba(0,0,0,.12);
+      backdrop-filter:blur(2px);
+      display:flex;flex-direction:column;gap:3px;
+    }
+    .typing-name{font-size:11px;font-weight:700;color:#6b7280;margin-bottom:2px}
+    .typing-dots{display:inline-flex;gap:5px;align-items:center;padding:2px 0}
     .typing-dots span{
-      width:5px;height:5px;border-radius:50%;
+      width:7px;height:7px;border-radius:50%;
       background:#9ca3af;
       animation:tdot 1.2s ease-in-out infinite;
     }
     .typing-dots span:nth-child(2){animation-delay:.2s}
     .typing-dots span:nth-child(3){animation-delay:.4s}
-    @keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+    @keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-5px);opacity:1}}
   </style>
 </head>
 <body>
@@ -444,10 +452,7 @@
       <p>אין הודעות עדיין<br>היה הראשון לכתוב 🚀</p>
     </div>
   </div>
-  <div class="typing-indicator" id="typingIndicator">
-    <div class="typing-dots"><span></span><span></span><span></span></div>
-    <span id="typingText"></span>
-  </div>
+  <div id="typingIndicator" style="display:none"></div><!-- legacy, replaced by in-feed -->
   <div class="reply-bar" id="replyBar">
     <div id="replyText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px"></div>
     <button onclick="cancelReply()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">✕</button>
@@ -1213,15 +1218,50 @@ async function pollTyping(){
     const r=await fetch(BACKEND+'/typing_status');
     const d=await r.json();
     const others=(d.typers||[]).filter(n=>n!==chatUserName);
-    const el=document.getElementById('typingIndicator');
-    const txt=document.getElementById('typingText');
-    if(others.length){
-      txt.textContent=others.join(', ')+(others.length===1?' מקליד...':' מקלידים...');
-      el.classList.add('show');
-    } else {
-      el.classList.remove('show');
-    }
+    renderTypingBubbles(others);
   }catch(e){}
+}
+
+function renderTypingBubbles(typers){
+  // Remove existing typing bubbles
+  document.querySelectorAll('.typing-bubble-wrap').forEach(el=>el.remove());
+  if(!typers.length) return;
+
+  const box=document.getElementById('chatMessages');
+  const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+
+  typers.forEach(name=>{
+    // Find picture from activeUsers
+    const user=activeUsers.find(u=>u.name===name)||{};
+    const wrap=document.createElement('div');
+    wrap.className='typing-bubble-wrap';
+
+    // Avatar
+    const avEl=document.createElement('div');
+    avEl.className='msg-group-avatar';
+    avEl.style.background=col(name);
+    if(user.picture){
+      const img=document.createElement('img');
+      img.src=user.picture;
+      img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+      img.onerror=()=>{img.style.display='none';avEl.textContent=(name[0]||'?').toUpperCase();};
+      avEl.appendChild(img);
+    } else {
+      avEl.textContent=(name[0]||'?').toUpperCase();
+    }
+
+    // Bubble
+    const bub=document.createElement('div');
+    bub.className='typing-bubble';
+    bub.innerHTML=`<div class="typing-name">${esc(name)}</div>
+      <div class="typing-dots"><span></span><span></span><span></span></div>`;
+
+    wrap.appendChild(avEl);
+    wrap.appendChild(bub);
+    box.appendChild(wrap);
+  });
+
+  if(atBottom) box.scrollTop=box.scrollHeight;
 }
 
 // ══ MENTION AUTOCOMPLETE ══
