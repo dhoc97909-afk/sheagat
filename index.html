@@ -108,7 +108,7 @@
       padding:7px 12px 7px 12px;font-size:14px;line-height:1.55;
       word-break:break-word;cursor:default;user-select:none;
       max-width:100%;position:relative;
-      animation:pop .18s cubic-bezier(.34,1.4,.64,1);
+      animation:none; /* no pop on re-render */
       backdrop-filter:blur(2px);
     }
     @keyframes pop{from{opacity:0;transform:scale(.9) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -933,10 +933,20 @@ async function loadChat(){
     const r=await fetch(BACKEND+'/chat_messages');
     const d=await r.json();
     if(d.status!=='success')return;
-    const ids=d.messages.map(m=>m.id+JSON.stringify(m.reactions||{})).join(',');
+    const msgs=d.messages||[];
+    const ids=msgs.map(m=>m.id+JSON.stringify(m.reactions||{})).join(',');
     if(ids===lastIds)return;
+    const isNew=lastIds!==''&&msgs.length>0&&!lastIds.startsWith(msgs.map(m=>m.id).join(',').substring(0,20));
+    const hadMessages=lastIds!=='';
     lastIds=ids;
-    renderChat(d.messages);
+    renderChat(msgs);
+    // Play sound only for genuinely new messages (not first load, not own messages)
+    if(hadMessages&&msgs.length>0){
+      const newest=msgs[msgs.length-1];
+      if(newest.email!==chatUserEmail){
+        playNotifSound();
+      }
+    }
   }catch(e){}
 }
 
@@ -947,6 +957,11 @@ function renderChat(msgs){
   if(!msgs.length){empty.style.display='flex';return;}
   empty.style.display='none';
   const byId={};msgs.forEach(m=>byId[m.id]=m);
+  // Remove typing bubbles temporarily (re-added by pollTyping)
+  document.querySelectorAll('.typing-bubble-wrap').forEach(el=>el.remove());
+  // Only clear and re-render if needed (avoid scroll jump)
+  // Keep scroll position
+  const scrollTop=box.scrollTop;
   box.innerHTML='';
   box.appendChild(empty);
 
@@ -1092,7 +1107,12 @@ function renderChat(msgs){
     box.appendChild(grpEl);
   });
 
-  if(atBottom)box.scrollTop=box.scrollHeight;
+  if(atBottom){
+    box.scrollTop=box.scrollHeight;
+  } else {
+    // Restore scroll position to prevent jump
+    box.scrollTop=scrollTop;
+  }
 }
 
 // ══ CONTEXT MENU ══
@@ -1383,6 +1403,19 @@ async function sendChat(){
 // ══ MODALS ══
 function animateModalIn(id){const el=document.getElementById(id);el.classList.remove('closing','open');void el.offsetWidth;el.classList.add('open');}
 function animateModalOut(id){const el=document.getElementById(id);el.classList.add('closing');el.classList.remove('open');setTimeout(()=>el.classList.remove('closing'),300);}
+
+// ══ NOTIFICATION SOUND ══
+let notifAudio=null;
+function playNotifSound(){
+  try{
+    if(!notifAudio){
+      notifAudio=new Audio('https://s3.prog.co.il/data/audio/2198/2198881-1f1b3f162a485d9f87a80120cc03ee52.mp3');
+      notifAudio.volume=0.5;
+    }
+    notifAudio.currentTime=0;
+    notifAudio.play().catch(()=>{});
+  }catch(e){}
+}
 
 // ══ INIT ══
 function init(){
