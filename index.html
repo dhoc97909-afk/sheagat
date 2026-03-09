@@ -574,7 +574,7 @@
 </div>
 
 <!-- ADMIN POPUP NOTIFICATION -->
-<div id="adminPopup" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border-radius:16px;padding:14px 24px;box-shadow:0 12px 40px rgba(37,99,235,.5);display:flex;align-items:center;gap:12px;font-family:'Assistant',sans-serif;animation:slideDown .4s cubic-bezier(.34,1.4,.64,1)">
+<div id="adminPopup" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border-radius:16px;padding:14px 24px;box-shadow:0 12px 40px rgba(37,99,235,.5);align-items:center;gap:12px;font-family:'Assistant',sans-serif">
   <i class="fas fa-bullhorn" style="font-size:18px"></i>
   <div>
     <div style="font-size:13px;font-weight:800">הודעת מנהל חדשה</div>
@@ -1329,7 +1329,7 @@ async function clearHistory(){
 }
 
 // ══ ADMIN BROADCAST ══
-let lastAdminId='';
+let lastAdminId=null; // null = not yet initialized
 let adminUnread=0;
 
 async function sendAdminMsg(){
@@ -1366,18 +1366,22 @@ async function loadAdminMsgs(){
 }
 
 function checkNewAdminMsgs(msgs){
-  if(!msgs.length){lastAdminId='';return;}
+  if(!msgs.length){
+    if(lastAdminId===null)lastAdminId=''; // initialized, no messages
+    updateAdminBadge();
+    return;
+  }
   const topId=msgs[0].id;
   const lastSeen=localStorage.getItem('admin_last_seen')||'0';
-  // Only popup if this is a truly new message since last check AND we've already initialized
-  if(lastAdminId && topId !== lastAdminId){
+  // Popup only if: already initialized (not first load) AND new message arrived AND not our own AND not already seen
+  if(lastAdminId !== null && lastAdminId !== '' && topId !== lastAdminId){
     const newest=msgs[0];
-    if(newest.email!==chatUserEmail && newest.id > lastSeen){
+    if(newest.email !== chatUserEmail && newest.id > lastSeen){
       showAdminPopup(newest);
     }
   }
   // Count unread
-  const unread=msgs.filter(m=>m.id>lastSeen&&m.email!==chatUserEmail).length;
+  const unread=msgs.filter(m=>String(m.id)>String(lastSeen)&&m.email!==chatUserEmail).length;
   adminUnread=unread;
   updateAdminBadge();
   lastAdminId=topId;
@@ -1387,6 +1391,7 @@ function showAdminPopup(msg){
   const popup=document.getElementById('adminPopup');
   document.getElementById('adminPopupText').textContent=msg.sender+': '+msg.text.substring(0,60)+(msg.text.length>60?'…':'');
   popup.style.display='flex';
+  popup.style.animation='slideDown .4s cubic-bezier(.34,1.4,.64,1)';
   // Auto-hide after 5s
   setTimeout(()=>{popup.style.display='none';},5000);
 }
