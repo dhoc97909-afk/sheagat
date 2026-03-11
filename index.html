@@ -982,6 +982,7 @@ function renderChat(msgs){
   const byId={};msgs.forEach(m=>byId[m.id]=m);
   // Remove typing bubbles temporarily (re-added by pollTyping)
   document.querySelectorAll('.typing-bubble-wrap').forEach(el=>el.remove());
+  _lastTypers=''; // force re-render after chat refresh
   // Only clear and re-render if needed (avoid scroll jump)
   // Keep scroll position
   const scrollTop=box.scrollTop;
@@ -992,10 +993,13 @@ function renderChat(msgs){
   const groups=[];
   msgs.forEach(msg=>{
     const last=groups[groups.length-1];
-    if(last&&last.sender===msg.sender&&last.minute===msg.time&&!msg.replyTo){
+    const msgTs=msg.clientTs||(msg.clientTime?Date.parse('1970/01/01 '+msg.clientTime):0);
+    const lastTs=last?(last.lastTs||0):0;
+    if(last&&last.sender===msg.sender&&(msgTs-lastTs)<60000&&!msg.replyTo){
+      last.lastTs=msgTs;
       last.msgs.push(msg);
     } else {
-      groups.push({sender:msg.sender,email:msg.email||'',picture:msg.picture||'',minute:msg.time,date:msg.date||'',msgs:[msg]});
+      groups.push({sender:msg.sender,email:msg.email||'',picture:msg.picture||'',minute:msg.time,date:msg.date||'',lastTs:msgTs,msgs:[msg]});
     }
   });
 
@@ -1263,12 +1267,16 @@ function onChatInput(){
   },3000);
 }
 
+let _lastTypers='';
 async function pollTyping(){
   if(!currentUser)return;
   try{
     const r=await fetch(BACKEND+'/typing_status');
     const d=await r.json();
     const others=(d.typers||[]).filter(n=>n!==chatUserName);
+    const key=others.join(',');
+    if(key===_lastTypers)return; // no change, skip re-render
+    _lastTypers=key;
     renderTypingBubbles(others);
   }catch(e){}
 }
@@ -1437,7 +1445,7 @@ async function sendChat(){
   const now=new Date();
   const clientTime=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',hour12:false});
   const clientDate=now.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/');
-  const body={sender:chatUserName,text,picture:chatUserPicture,email:chatUserEmail,clientTime,clientDate};
+  const body={sender:chatUserName,text,picture:chatUserPicture,email:chatUserEmail,clientTime,clientDate,clientTs:now.getTime()};
   if(chatReplyTo)body.replyTo=chatReplyTo;
   inp.value='';inp.style.height='auto';
   cancelReply();
