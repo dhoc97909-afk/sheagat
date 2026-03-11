@@ -121,26 +121,23 @@
       border-radius:18px 4px 18px 18px; /* single: tail top-right */
       box-shadow:0 1px 4px rgba(0,0,0,.15);
     }
-    /* first: bottom-right=4 only (top still has tail=4 for single, here fully round) */
-    .bubble.me.grp-first{border-radius:18px 18px 4px 18px}
-    /* middle: top-right=4, bottom-right=4 */
-    .bubble.me.grp-mid{border-radius:18px 4px 4px 18px}
-    /* last: top-right=4 only, bottom fully round */
-    .bubble.me.grp-last{border-radius:18px 4px 18px 18px}
+    /* ME (right side) — avatar is on RIGHT, so LEFT side corners change */
+    /* border-radius: top-left top-right bottom-right bottom-left */
+    .bubble.me.grp-first{border-radius:18px 18px 18px 4px}  /* bottom-left=4 */
+    .bubble.me.grp-mid{border-radius:4px 18px 18px 4px}     /* top-left=4, bottom-left=4 */
+    .bubble.me.grp-last{border-radius:4px 18px 18px 18px}   /* top-left=4 */
 
     /* THEIR bubbles — left, white */
     .bubble.other{
       background:rgba(255,255,255,0.88);
       color:#1f2937;
-      border-radius:4px 18px 18px 18px; /* single: tail top-left */
+      border-radius:18px 18px 18px 18px;
       box-shadow:0 1px 4px rgba(0,0,0,.12);
     }
-    /* first: bottom-left=4 only */
-    .bubble.other.grp-first{border-radius:18px 18px 18px 4px}
-    /* middle: top-left=4, bottom-left=4 */
-    .bubble.other.grp-mid{border-radius:4px 18px 18px 4px}
-    /* last: top-left=4 only */
-    .bubble.other.grp-last{border-radius:4px 18px 18px 18px}
+    /* OTHER (left side) — avatar is on LEFT, so RIGHT side corners change */
+    .bubble.other.grp-first{border-radius:18px 18px 4px 18px}  /* bottom-right=4 */
+    .bubble.other.grp-mid{border-radius:18px 4px 4px 18px}     /* top-right=4, bottom-right=4 */
+    .bubble.other.grp-last{border-radius:18px 4px 18px 18px}   /* top-right=4 */
 
     /* ── TIME inline (same line as text end) ── */
     .bubble-meta{display:none}
