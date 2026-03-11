@@ -993,10 +993,11 @@ function renderChat(msgs){
   const groups=[];
   msgs.forEach(msg=>{
     const last=groups[groups.length-1];
-    const msgTs=msg.clientTs||(msg.clientTime?Date.parse('1970/01/01 '+msg.clientTime):0);
+    const msgTs=msg.clientTs||0;
     const lastTs=last?(last.lastTs||0):0;
-    if(last&&last.sender===msg.sender&&(msgTs-lastTs)<60000&&!msg.replyTo){
-      last.lastTs=msgTs;
+    const sameTime=(msgTs>0&&lastTs>0)?(msgTs-lastTs)<60000:last&&last.minute===msg.time;
+    if(last&&last.sender===msg.sender&&sameTime&&!msg.replyTo){
+      if(msgTs>0)last.lastTs=msgTs;
       last.msgs.push(msg);
     } else {
       groups.push({sender:msg.sender,email:msg.email||'',picture:msg.picture||'',minute:msg.time,date:msg.date||'',lastTs:msgTs,msgs:[msg]});
