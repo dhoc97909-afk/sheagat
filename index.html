@@ -121,11 +121,11 @@
       border-radius:18px 4px 18px 18px; /* single: tail top-right */
       box-shadow:0 1px 4px rgba(0,0,0,.15);
     }
-    /* first: tail(top-right=4) + bottom-right=4 to connect next */
-    .bubble.me.grp-first{border-radius:18px 4px 4px 18px}
+    /* first: bottom-right=4 only (top still has tail=4 for single, here fully round) */
+    .bubble.me.grp-first{border-radius:18px 18px 4px 18px}
     /* middle: top-right=4, bottom-right=4 */
     .bubble.me.grp-mid{border-radius:18px 4px 4px 18px}
-    /* last: top-right=4 (connects prev), bottom-right=18 (free end) */
+    /* last: top-right=4 only, bottom fully round */
     .bubble.me.grp-last{border-radius:18px 4px 18px 18px}
 
     /* THEIR bubbles — left, white */
@@ -135,11 +135,11 @@
       border-radius:4px 18px 18px 18px; /* single: tail top-left */
       box-shadow:0 1px 4px rgba(0,0,0,.12);
     }
-    /* first: tail(top-left=4) + bottom-left=4 to connect next */
-    .bubble.other.grp-first{border-radius:4px 18px 18px 4px}
+    /* first: bottom-left=4 only */
+    .bubble.other.grp-first{border-radius:18px 18px 18px 4px}
     /* middle: top-left=4, bottom-left=4 */
     .bubble.other.grp-mid{border-radius:4px 18px 18px 4px}
-    /* last: top-left=4 (connects prev), bottom-left=18 (free end) */
+    /* last: top-left=4 only */
     .bubble.other.grp-last{border-radius:4px 18px 18px 18px}
 
     /* ── TIME inline (same line as text end) ── */
