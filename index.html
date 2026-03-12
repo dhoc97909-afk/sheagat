@@ -419,6 +419,12 @@
       <button onclick="addAllowedEmail()" style="background:#2563eb;color:white;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;font-size:13px">+ הוסף</button>
     </div>
     <div id="settingsMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:600;text-align:center"></div>
+    <div id="driveConnectSection" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9">
+      <div style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">חיבור Google Drive לסרטונים</div>
+      <div id="driveStatus" style="font-size:12px;color:#6b7280;margin-bottom:8px">בודק חיבור...</div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px">הוסף ב-Google Cloud Console תחת Authorized Redirect URIs:<br><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:10px">https://dhoc97909.pythonanywhere.com/drive_oauth_callback</code></div>
+      <button onclick="connectDrive()" id="driveConnectBtn" style="background:#059669;color:white;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:Assistant,sans-serif;font-size:13px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><i class="fab fa-google-drive"></i> חבר Drive שלי</button>
+    </div>
   </div>
 </div>
 
@@ -832,9 +838,52 @@ function doLogout(){
 }
 
 // ══ SETTINGS (server-side) ══
-async function openSettings(){
+async async function checkDriveStatus(){
+  if(!currentUser||currentUser.email!==SUPER_ADMIN.toLowerCase())return;
+  document.getElementById('driveConnectSection').style.display='block';
+  try{
+    const r=await fetch(BACKEND+'/drive_status');
+    const d=await r.json();
+    const el=document.getElementById('driveStatus');
+    const btn=document.getElementById('driveConnectBtn');
+    if(d.configured){
+      el.innerHTML='<span style="color:#059669">✅ Drive מחובר — כל הסרטונים עולים אוטומטית</span>';
+      btn.textContent='חבר מחדש';
+      btn.style.background='#6b7280';
+    } else {
+      el.innerHTML='<span style="color:#dc2626">❌ Drive לא מחובר</span>';
+    }
+  }catch(e){}
+}
+
+function connectDrive(){
+  // Save client_id + client_secret to server first, then open OAuth
+  const clientId=document.getElementById('googleClientId').value.trim();
+  const clientSecret=prompt('הכנס את ה-Client Secret מ-Google Cloud Console:');
+  if(!clientSecret)return;
+  // Save credentials to server first
+  fetch(BACKEND+'/drive_save_token',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:chatUserEmail,client_id:clientId,client_secret:clientSecret,access_token:'',refresh_token:''})
+  }).then(()=>{
+    // Open OAuth popup
+    const popup=window.open(BACKEND+'/drive_oauth_start?client_id='+encodeURIComponent(clientId),'driveauth','width=500,height=600');
+    window.addEventListener('message',(e)=>{
+      if(e.data&&e.data.driveOAuth==='ok'){
+        document.getElementById('driveStatus').innerHTML='<span style="color:#059669">✅ Drive מחובר בהצלחה!</span>';
+        document.getElementById('driveConnectBtn').style.background='#6b7280';
+        document.getElementById('driveConnectBtn').textContent='חבר מחדש';
+      } else if(e.data&&e.data.driveOAuth==='error'){
+        alert('שגיאה: '+e.data.msg);
+      }
+    },{once:true});
+  });
+}
+
+function openSettings(){
   document.getElementById('settingsModal').classList.add('open');
-  await loadAllowedList();
+  checkDriveStatus();
+  loadAllowedList();
 }
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
 
