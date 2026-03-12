@@ -459,6 +459,11 @@
     </div>
   </div>
   <div id="typingIndicator" style="display:none"></div><!-- legacy, replaced by in-feed -->
+  <div style="position:relative;height:0;flex-shrink:0">
+    <button id="scrollDownBtn" onclick="scrollToBottom()" style="display:none;position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:white;border:1.5px solid #e5e7eb;border-radius:99px;padding:6px 16px;font-size:12px;font-weight:700;color:#374151;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:20;font-family:Assistant,sans-serif;align-items:center;gap:6px;white-space:nowrap">
+      <i class="fas fa-chevron-down" style="font-size:11px"></i> חזרה למטה <span id="scrollDownUnread" style="display:none;background:#2563eb;color:white;border-radius:99px;padding:1px 7px;font-size:10px"></span>
+    </button>
+  </div>
   <div class="reply-bar" id="replyBar">
     <div id="replyText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px"></div>
     <button onclick="cancelReply()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">✕</button>
@@ -793,6 +798,24 @@ function showApp(){
   pollTyping();
   loadPinnedMsg();
   setInterval(loadChat,2000);
+  document.getElementById('chatMessages').addEventListener('scroll',()=>{
+    const box=document.getElementById('chatMessages');
+    const dist=box.scrollHeight-box.scrollTop-box.clientHeight;
+    const btn=document.getElementById('scrollDownBtn');
+    if(dist>150){
+      btn.style.display='flex';
+      // Position: fixed, anchored above reply bar
+      const sidebar=document.getElementById('chatSidebar');
+      const r=sidebar.getBoundingClientRect();
+      btn.style.position='fixed';
+      btn.style.bottom=(window.innerHeight-r.bottom+90)+'px';
+      btn.style.left=(r.left+r.width/2)+'px';
+      btn.style.transform='translateX(-50%)';
+    } else {
+      btn.style.display='none';
+      scrollUnread=0;updateScrollUnread();
+    }
+  });
   setInterval(()=>loadPinnedMsg(),10000);
   setInterval(pingPresence,15000);
   setInterval(pollTyping,2000);
@@ -892,7 +915,9 @@ function showSettingsMsg(txt,color){
 }
 
 // ══ CHAT ══
-let chatReplyTo=null,lastIds='';
+let chatReplyTo=null,lastIds='',scrollUnread=0;
+function updateScrollUnread(){const el=document.getElementById('scrollDownUnread');if(!el)return;if(scrollUnread>0){el.style.display='inline';el.textContent=scrollUnread;}else el.style.display='none';}
+function scrollToBottom(){const box=document.getElementById('chatMessages');box.scrollTo({top:box.scrollHeight,behavior:'smooth'});scrollUnread=0;updateScrollUnread();const btn=document.getElementById('scrollDownBtn');if(btn)btn.style.display='none';}
 const COLORS=['#3b82f6','#7c3aed','#059669','#d97706','#dc2626','#db2777'];
 const col=s=>COLORS[(s||'').charCodeAt(0)%COLORS.length];
 const esc=t=>(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
@@ -968,6 +993,10 @@ async function loadChat(){
       const newest=msgs[msgs.length-1];
       if(newest.email!==chatUserEmail){
         playNotifSound();
+        // If scrolled up, increment unread badge
+        const box=document.getElementById('chatMessages');
+        const dist=box.scrollHeight-box.scrollTop-box.clientHeight;
+        if(dist>150){scrollUnread++;updateScrollUnread();}
       }
     }
   }catch(e){}
@@ -1084,7 +1113,7 @@ function renderChat(msgs){
         const orig=byId[msg.replyTo.id];
         const rt=orig?orig.text:(msg.replyTo.text||'');
         const rc=isMe?'reply-preview':'reply-preview dark';
-        inner+=`<div class="${rc}"><strong>${esc(msg.replyTo.sender)}</strong>${esc(rt.substring(0,50))}${rt.length>50?'…':''}</div>`;
+        inner+=`<div class="${rc}" onclick="jumpToMsg('${msg.replyTo.id}')" style="cursor:pointer"><strong>${esc(msg.replyTo.sender)}</strong>${esc(rt.substring(0,50))}${rt.length>50?'…':''}</div>`;
       }
       inner+=`<span>${renderMsgText(msg.text)}</span>`;
       bEl.innerHTML=inner;
@@ -1242,6 +1271,17 @@ async function loadPinnedMsg(){
     pinnedMsg=d.pin||null;
     renderPinnedBar();
   }catch(e){}
+}
+
+function jumpToMsg(id){
+  const el=document.getElementById('bubble-'+id);
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  // Flash highlight
+  el.style.transition='background .15s';
+  const orig=el.style.background;
+  el.style.background='rgba(59,130,246,0.25)';
+  setTimeout(()=>{el.style.background=orig;},800);
 }
 
 function scrollToPinned(){
@@ -1437,6 +1477,78 @@ function handleChatKey(e){
     if(e.key==='Escape'){hideMentionBox();return;}
   }
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
+}
+
+async function handleChatPaste(e){
+  const items=[...(e.clipboardData?.items||[])];
+  const imgItem=items.find(i=>i.type.startsWith('image/'));
+  const vidItem=items.find(i=>i.type.startsWith('video/'));
+  if(!imgItem&&!vidItem)return; // let default text paste happen
+  e.preventDefault();
+
+  if(imgItem){
+    const file=imgItem.getAsFile();
+    if(!file)return;
+    showChatUploadStatus('מעלה תמונה...');
+    try{
+      const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+      const form=new FormData();
+      form.append('key','74b5db34f7d743e270990275f1afd0ee');
+      form.append('image',base64);
+      const resp=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+      const data=await resp.json();
+      if(data.success){
+        const ta=document.getElementById('chatInput');
+        ta.value=(ta.value?ta.value+'\n':'')+data.data.url;
+        ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,80)+'px';
+        onChatInput();
+        hideChatUploadStatus();
+      } else throw new Error('שגיאת העלאה');
+    }catch(err){showChatUploadStatus('שגיאה: '+err.message,true);setTimeout(hideChatUploadStatus,3000);}
+
+  } else if(vidItem){
+    const file=vidItem.getAsFile();
+    if(!file)return;
+    showChatUploadStatus('מעלה סרטון ל-Drive...');
+    try{
+      const token=await getDriveToken();
+      const folderId=await getOrCreateFolder(token);
+      const metadata={name:file.name||'video.mp4',mimeType:file.type,parents:[folderId]};
+      const form=new FormData();
+      form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+      form.append('file',file);
+      const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
+      if(!res.ok)throw new Error('שגיאת העלאה');
+      const{id}=await res.json();
+      const url=`https://drive.google.com/file/d/${id}/view`;
+      const ta=document.getElementById('chatInput');
+      ta.value=(ta.value?ta.value+'\n':'')+url;
+      ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,80)+'px';
+      onChatInput();
+      hideChatUploadStatus();
+    }catch(err){showChatUploadStatus('שגיאה: '+err.message,true);setTimeout(hideChatUploadStatus,3000);}
+  }
+}
+
+let _chatUploadTimer=null;
+function showChatUploadStatus(msg,isErr){
+  let el=document.getElementById('chatUploadStatus');
+  if(!el){
+    el=document.createElement('div');
+    el.id='chatUploadStatus';
+    el.style.cssText='position:absolute;bottom:70px;right:12px;background:rgba(30,30,30,.85);color:white;padding:6px 14px;border-radius:10px;font-size:12px;z-index:100;pointer-events:none;font-family:Assistant,sans-serif';
+    document.getElementById('chatArea').appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.background=isErr?'rgba(220,38,38,.85)':'rgba(30,30,30,.85)';
+  el.style.display='block';
+  clearTimeout(_chatUploadTimer);
+}
+function hideChatUploadStatus(){
+  _chatUploadTimer=setTimeout(()=>{
+    const el=document.getElementById('chatUploadStatus');
+    if(el)el.style.display='none';
+  },1500);
 }
 
 async function sendChat(){
