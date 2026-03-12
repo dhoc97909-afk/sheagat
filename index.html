@@ -838,7 +838,7 @@ function doLogout(){
 }
 
 // ══ SETTINGS (server-side) ══
-async async function checkDriveStatus(){
+async function checkDriveStatus(){
   if(!currentUser||currentUser.email!==SUPER_ADMIN.toLowerCase())return;
   document.getElementById('driveConnectSection').style.display='block';
   try{
