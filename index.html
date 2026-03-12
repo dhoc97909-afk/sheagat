@@ -419,12 +419,7 @@
       <button onclick="addAllowedEmail()" style="background:#2563eb;color:white;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:'Assistant',sans-serif;font-size:13px">+ הוסף</button>
     </div>
     <div id="settingsMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:600;text-align:center"></div>
-    <div id="driveConnectSection" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9">
-      <div style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">חיבור Google Drive לסרטונים</div>
-      <div id="driveStatus" style="font-size:12px;color:#6b7280;margin-bottom:8px">בודק חיבור...</div>
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px">הוסף ב-Google Cloud Console תחת Authorized Redirect URIs:<br><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:10px">https://dhoc97909.pythonanywhere.com/drive_oauth_callback</code></div>
-      <button onclick="connectDrive()" id="driveConnectBtn" style="background:#059669;color:white;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-family:Assistant,sans-serif;font-size:13px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><i class="fab fa-google-drive"></i> חבר Drive שלי</button>
-    </div>
+
   </div>
 </div>
 
@@ -838,52 +833,10 @@ function doLogout(){
 }
 
 // ══ SETTINGS (server-side) ══
-async function checkDriveStatus(){
-  if(!currentUser||currentUser.email!==SUPER_ADMIN.toLowerCase())return;
-  document.getElementById('driveConnectSection').style.display='block';
-  try{
-    const r=await fetch(BACKEND+'/drive_status');
-    const d=await r.json();
-    const el=document.getElementById('driveStatus');
-    const btn=document.getElementById('driveConnectBtn');
-    if(d.configured){
-      el.innerHTML='<span style="color:#059669">✅ Drive מחובר — כל הסרטונים עולים אוטומטית</span>';
-      btn.textContent='חבר מחדש';
-      btn.style.background='#6b7280';
-    } else {
-      el.innerHTML='<span style="color:#dc2626">❌ Drive לא מחובר</span>';
-    }
-  }catch(e){}
-}
 
-function connectDrive(){
-  // Save client_id + client_secret to server first, then open OAuth
-  const clientId=document.getElementById('googleClientId').value.trim();
-  const clientSecret=prompt('הכנס את ה-Client Secret מ-Google Cloud Console:');
-  if(!clientSecret)return;
-  // Save credentials to server first
-  fetch(BACKEND+'/drive_save_token',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({email:chatUserEmail,client_id:clientId,client_secret:clientSecret,access_token:'',refresh_token:''})
-  }).then(()=>{
-    // Open OAuth popup
-    const popup=window.open(BACKEND+'/drive_oauth_start?client_id='+encodeURIComponent(clientId),'driveauth','width=500,height=600');
-    window.addEventListener('message',(e)=>{
-      if(e.data&&e.data.driveOAuth==='ok'){
-        document.getElementById('driveStatus').innerHTML='<span style="color:#059669">✅ Drive מחובר בהצלחה!</span>';
-        document.getElementById('driveConnectBtn').style.background='#6b7280';
-        document.getElementById('driveConnectBtn').textContent='חבר מחדש';
-      } else if(e.data&&e.data.driveOAuth==='error'){
-        alert('שגיאה: '+e.data.msg);
-      }
-    },{once:true});
-  });
-}
-
-function openSettings(){
+async function openSettings(){
   document.getElementById('settingsModal').classList.add('open');
-  checkDriveStatus();
-  loadAllowedList();
+  await loadAllowedList();
 }
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
 
@@ -1839,22 +1792,7 @@ function updateStatus(ic,title,desc,cc,showCancel,prog){document.getElementById(
 function hideStatus(){animateModalOut('modalStatus');}
 
 async function uploadImageFile(file){const apiKey=document.getElementById('imgbbApiKey').value.trim();if(!apiKey||!file)return;showStatus('fas fa-image','מעלה תמונה...',file.name,false,true,20);try{const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});updateStatus('fas fa-cloud-upload-alt','שולח לשרת...','imgbb','',false,60);const form=new FormData();form.append('key',apiKey);form.append('image',base64);const res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});const data=await res.json();if(data.success){document.getElementById('newsImgUrl').value=data.data.url;updateImgThumb();updateStatus('fas fa-check-double','הועלה!','התמונה מוכנה','',false,100);setTimeout(hideStatus,1800);}else throw new Error(data.error?.message||'שגיאה');}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'',false,0);setTimeout(hideStatus,3000);}}
-async function uploadVideoFile(file){
-  if(!file)return;
-  showStatus('fas fa-cloud-upload-alt','מעלה סרטון...','לשרת','',false,20);
-  try{
-    const form=new FormData();
-    form.append('file',file,file.name||'video.mp4');
-    const res=await fetch(BACKEND+'/drive_upload',{method:'POST',body:form});
-    const data=await res.json();
-    if(data.status==='ok'){
-      document.getElementById('videoUrl').value=data.url;
-      updateVidInfo();
-      updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','',false,100);
-      setTimeout(hideStatus,2500);
-    } else throw new Error(data.msg||'שגיאה');
-  }catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'',false,0);setTimeout(hideStatus,3000);}
-}
+async function uploadVideoFile(file){if(!file)return;showStatus('fab fa-google','מתחבר ל-Drive...','נא אשר גישה','',false,5);let token;try{token=await getDriveToken();}catch(e){updateStatus('fas fa-times-circle','שגיאת כניסה',e.message,'',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-folder-open','מאתר תיקייה...','סרטוני מבזק','',false,20);let folderId;try{folderId=await getOrCreateFolder(token);}catch(e){updateStatus('fas fa-times-circle','שגיאת תיקייה',e.message,'',false,0);setTimeout(hideStatus,3000);return;}updateStatus('fas fa-cloud-upload-alt','מעלה לDrive...',file.name,'',false,50);try{const metadata={name:file.name,mimeType:file.type,parents:[folderId]};const form=new FormData();form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));form.append('file',file);const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form});if(!res.ok)throw new Error('שגיאת העלאה: '+res.status);const{id}=await res.json();document.getElementById('videoUrl').value=`https://drive.google.com/file/d/${id}/view`;updateVidInfo();updateStatus('fas fa-check-double','הועלה!','הסרטון נשמר ב-Drive','',false,100);setTimeout(hideStatus,2500);}catch(e){updateStatus('fas fa-times-circle','שגיאה',e.message,'',false,0);setTimeout(hideStatus,3000);}}
 function getDriveToken(){return new Promise((resolve,reject)=>{
   // Check in-memory first
   if(driveAccessToken){resolve(driveAccessToken);return;}
