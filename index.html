@@ -1778,7 +1778,21 @@ async function executeActualSend(){
         if(rd.name)msgNames.push({webhook:webhooks[currentProfile][i],msgName:rd.name,groupName:(GROUPS[i]||{}).name||('קבוצה '+(i+1))});
       }catch(e){}
     }
-    addToHistory(currentProfile,document.getElementById('editor').innerText.trim().substring(0,120),imgUrl,videoUrl,n,msgNames);
+    const plainText=document.getElementById('editor').innerText.trim();
+    addToHistory(currentProfile,plainText.substring(0,120),imgUrl,videoUrl,n,msgNames);
+    // Push to public feed
+    fetch(BACKEND+'/feed_add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      profile:currentProfile,
+      text:plainText,
+      imgUrl,videoUrl,
+      sender:chatUserName,
+      senderEmail:chatUserEmail,
+      time:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),
+      date:new Date().toLocaleDateString('he-IL'),
+      ts:Date.now(),
+      groupCount:n,
+      buttons:buttons.map(b=>({text:b.text,url:b.url})),
+    })}).catch(()=>{});
     updateStatus('fas fa-check-double','נשלח בהצלחה!',`פורסם ב-${n} קבוצות`,'',false,100);
     document.getElementById('editor').innerHTML='';clearImage();clearVideo();buttons=[];renderButtons();onEditorChange();
     setTimeout(hideStatus,2200);
