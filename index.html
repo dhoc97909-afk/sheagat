@@ -749,7 +749,7 @@ async function handleGoogleLogin(resp){
   }catch(e){}
 
   // Fallback: use email prefix (before @) - always ASCII, never garbled
-  if(!displayName) displayName=email.split('@')[0];
+if(!displayName || displayName.includes('×')) displayName=email.split('@')[0];
 
   currentUser={name:displayName,email,picture};
 localStorage.setItem(LS_KEY, JSON.stringify(currentUser));
@@ -1598,12 +1598,18 @@ function playNotifSound(){
 
 // ══ INIT ══
 function init(){
-const saved = localStorage.getItem(LS_KEY);
+  const saved = localStorage.getItem(LS_KEY);
   if(saved){
     try{currentUser=JSON.parse(saved);}catch(e){currentUser=null;}
-    if(currentUser){showApp();}
-  }
-  function tryGoogle(attempt){
+    if(currentUser){
+      // תקן שם מקושקש שנשמר בעבר
+      if(currentUser.name && currentUser.name.includes('×')){
+        currentUser.name=currentUser.email.split('@')[0];
+        localStorage.setItem(LS_KEY,JSON.stringify(currentUser));
+      }
+      showApp();
+    }
+  }  function tryGoogle(attempt){
     attempt=attempt||0;
     if(window.google&&window.google.accounts&&window.google.accounts.id){
       initGoogleLogin();
