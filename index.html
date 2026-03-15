@@ -649,7 +649,7 @@
 const GOOGLE_CLIENT_ID = '426523025549-7c50rkn7cun4vmm2r802u0ij6egjehtg.apps.googleusercontent.com';
 const SUPER_ADMIN = 'david@hamakom.ovh';
 const BACKEND = 'https://dhoc97909.pythonanywhere.com'; // כל הקריאות לשרת
-
+const LS_KEY = 'lion_user';
 // GROUPS loaded from server dynamically
 let GROUPS=[];
 let webhooks={news:[],red:[]};
@@ -752,7 +752,7 @@ async function handleGoogleLogin(resp){
   if(!displayName) displayName=email.split('@')[0];
 
   currentUser={name:displayName,email,picture};
-  sessionStorage.setItem('lion_user',JSON.stringify(currentUser));
+localStorage.setItem(LS_KEY, JSON.stringify(currentUser));
   // Save picture to server for other admins to see
   try{
     await fetch(BACKEND+'/allowed_update_picture',{method:'POST',
@@ -826,7 +826,7 @@ function showApp(){
 function doLogout(){
   try{google.accounts.id.disableAutoSelect();}catch(e){}
   try{fetch(BACKEND+'/presence_leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:chatUserEmail}),keepalive:true});}catch(e){}
-  sessionStorage.removeItem('lion_user');
+  localStorage.removeItem(LS_KEY);
   currentUser=null;
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('loginError').style.display='none';
@@ -1598,7 +1598,7 @@ function playNotifSound(){
 
 // ══ INIT ══
 function init(){
-  const saved=sessionStorage.getItem('lion_user');
+const saved = localStorage.getItem(LS_KEY);
   if(saved){
     try{currentUser=JSON.parse(saved);}catch(e){currentUser=null;}
     if(currentUser){showApp();}
