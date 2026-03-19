@@ -1210,8 +1210,9 @@ function showCtxMenu(e,msg,isMe){
 function hideCtxMenu(){document.getElementById('ctxMenu').style.display='none';}
 
 async function deleteMsg(id){
+async function deleteMsg(id){
   try{
-    await fetch(BACKEND+'/chat_delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+    await fetch(BACKEND+'/chat_delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email:chatUserEmail})});
     lastIds='';loadChat();
   }catch(e){}
 }
