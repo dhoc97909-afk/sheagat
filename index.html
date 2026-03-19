@@ -1210,7 +1210,6 @@ function showCtxMenu(e,msg,isMe){
 function hideCtxMenu(){document.getElementById('ctxMenu').style.display='none';}
 
 async function deleteMsg(id){
-async function deleteMsg(id){
   try{
     await fetch(BACKEND+'/chat_delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email:chatUserEmail})});
     lastIds='';loadChat();
@@ -1608,9 +1607,10 @@ function init(){
         currentUser.name=currentUser.email.split('@')[0];
         localStorage.setItem(LS_KEY,JSON.stringify(currentUser));
       }
-      showApp();
+   showApp(); return;
     }
-  }  function tryGoogle(attempt){
+  }
+  function tryGoogle(attempt) {
     attempt=attempt||0;
     if(window.google&&window.google.accounts&&window.google.accounts.id){
       initGoogleLogin();
