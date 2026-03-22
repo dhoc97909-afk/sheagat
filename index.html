@@ -3,155 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מדיניות שליחת הודעות - מנהלים</title>
+    <title>מדיניות ניהול ומנהלים - שלב אחר שלב</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Assistant', sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f8fafc;
         }
-        .policy-card {
-            border-right: 4px solid #3b82f6;
-            transition: transform 0.2s;
+        .timeline-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
         }
-        .policy-card:hover {
-            transform: translateX(-5px);
+        .step-dot {
+            position: absolute;
+            right: 11px;
+            top: 24px;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 0 0 2px #3b82f6;
+            z-index: 10;
         }
-        .highlight-box {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="py-10 px-4 md:px-0">
 
-    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
+    <div class="max-w-3xl mx-auto">
         <!-- Header -->
-        <div class="bg-blue-600 p-6 text-white text-center">
-            <h1 class="text-3xl font-bold mb-2">הנחיות ומדיניות פעילות</h1>
-            <p class="text-blue-100 italic">עדכון למנהלים - החל ממחר</p>
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4">מדיניות פעילות המנהלים</h1>
+            <p class="text-lg text-gray-600">גללו למטה כדי לראות את שלבי העבודה וההנחיות</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="p-6 md:p-10 space-y-8">
-            
-            <!-- Opening -->
-            <div class="bg-yellow-50 border-r-4 border-yellow-400 p-4 mb-6">
-                <p class="text-gray-800 font-medium leading-relaxed">
-                    מנהלים יקרים: הנחייה זו נכתבה באופן ידני, נא לכבד ולקרוא בעיון. החל ממחר נכנסים לפעילות רצינית בערוץ ומפסיקים את הפעילות בצ'אט באופן סופי.
-                </p>
+        <div class="relative">
+            <!-- Central Line -->
+            <div class="timeline-line hidden md:block" style="right: 50%; margin-right: -1px;"></div>
+
+            <!-- Step 1: Start -->
+            <div class="relative mb-12 flex flex-col md:flex-row items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-green-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">1. פתיחת משמרת</h2>
+                    </div>
+                    <p class="text-gray-600">כל מנהל שמתחיל לעדכן <span class="font-bold text-blue-600">חייב לכתוב בצ'אט</span> שהוא נכנס לפעילות כדי למנוע כפילויות.</p>
+                </div>
             </div>
 
-            <!-- Section: Message Senders Policy -->
-            <section>
-                <div class="flex items-center mb-4">
-                    <div class="bg-blue-100 p-2 rounded-lg ml-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800">מדיניות שולחי ההודעות</h2>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="policy-card bg-gray-50 p-4 rounded-lg shadow-sm">
-                        <h3 class="font-bold text-blue-800 mb-1">מניעת כפילויות</h3>
-                        <p class="text-gray-600">תמיד נעדיף מנהל אחד פעיל ששולח. אם יש מנהל שכבר מעדכן - השאירו לו את הבמה.</p>
-                    </div>
-                    <div class="policy-card bg-gray-50 p-4 rounded-lg shadow-sm">
-                        <h3 class="font-bold text-blue-800 mb-1">אירועים חריגים</h3>
-                        <p class="text-gray-600">נאכוף את העניין ונאפשר רק למנהל אחד או שניים לעדכן. לשאר תופיע הודעת חסימה.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section: Continuous Contact Policy (New) -->
-            <section class="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <div class="flex items-start mb-4">
-                    <div class="bg-blue-600 p-2 rounded-lg ml-4 shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-blue-900 mb-1">שמירה על קשר רציף</h2>
-                        <p class="text-blue-800 opacity-90">סנכרון בין המנהלים הוא המפתח לעבודה מקצועית</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div class="flex items-center p-3 bg-white rounded-lg border border-blue-100 shadow-sm">
-                        <div class="ml-3 text-green-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                            </svg>
+            <!-- Step 2: Permission -->
+            <div class="relative mb-12 flex flex-col md:flex-row-reverse items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-blue-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                         </div>
-                        <span class="text-gray-700 font-semibold">תחילת עדכון: לכתוב בצ'אט</span>
+                        <h2 class="text-xl font-bold text-gray-800">2. הרשאת כתיבה</h2>
                     </div>
-                    <div class="flex items-center p-3 bg-white rounded-lg border border-blue-100 shadow-sm">
-                        <div class="ml-3 text-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                            </svg>
-                        </div>
-                        <span class="text-gray-700 font-semibold">סיום פעילות: לכתוב בצ'אט</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section: Message Content Policy -->
-            <section>
-                <div class="flex items-center mb-4">
-                    <div class="bg-red-100 p-2 rounded-lg ml-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800">מדיניות שליחת ההודעות</h2>
-                </div>
-                <div class="space-y-4">
-                    <div class="highlight-box p-4 rounded-xl border border-blue-100">
-                        <ul class="list-disc list-inside space-y-3 text-gray-700">
-                            <li><span class="font-bold">סינון מקורות:</span> אין לשלוח מערוצים שאינם מאושרי צנזורה (לדוגמה: "חדשות ישראל - ללא צנזורה").</li>
-                            <li><span class="font-bold">אמינות:</span> היצמדו להודעות מדובריות רשמיות ומערוצים אמינים בלבד. הימנעו מ"חירטוטים" בטלגרם.</li>
-                            <li><span class="font-bold">קצב שליחה:</span> עדכון אחד לכל 2 דקות בשגרה (בדוחק דקה). בחירום (נפילת טיל וכו') הקצב חופשי לפי הצורך.</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section: Technical & Format -->
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-3">מדיה (בקצרה)</h3>
-                    <div class="bg-gray-100 p-4 rounded-lg">
-                        <p class="mb-2">📸 <span class="font-bold">תמונה:</span> הדבק / גרור / כפתור תמונה.</p>
-                        <p>🎥 <span class="font-bold">סרטון:</span> רק מכתובת ישירה, יוטיוב או דרייב.</p>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-3">איך עדכון נראה?</h3>
-                    <div class="bg-white border-2 border-dashed border-gray-300 p-4 rounded-lg">
-                        <p class="text-lg"><span class="font-bold text-blue-900">הכותרת מודגשת</span> • תוכן העדכון ללא עיצוב מיוחד.</p>
-                        <div class="mt-4 text-sm text-gray-500 italic">
-                            דוגמאות לכותרות:<br>
-                            דוברות מד"א • <br>
-                            דיווח חריג • 
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Footer Note -->
-            <div class="mt-10 pt-6 border-t border-gray-100 text-center">
-                <p class="text-gray-600 font-semibold">לכל שאלה תפנו אלי באישי.</p>
-                <div class="mt-4 flex justify-center space-x-4 space-x-reverse">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        פעילות רצינית
-                    </span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                        סוף פעילות צ'אט
-                    </span>
+                    <p class="text-gray-600">בכל זמן נתון, <span class="font-bold">מנהל אחד בלבד</span> מקבל הרשאת כתיבה בפועל כדי לשמור על סדר בערוץ.</p>
                 </div>
             </div>
+
+            <!-- Step 3: Source Verification -->
+            <div class="relative mb-12 flex flex-col md:flex-row items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-red-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">3. אמינות המקורות</h2>
+                    </div>
+                    <p class="text-gray-600 italic mb-2">"תיצמדו להודעות רשמיות בלבד"</p>
+                    <p class="text-sm text-gray-500">חל איסור מוחלט להעביר מידע מערוצים ללא צנזורה או מקורות לא מזוהים בטלגרם.</p>
+                </div>
+            </div>
+
+            <!-- Step 4: Content Style -->
+            <div class="relative mb-12 flex flex-col md:flex-row-reverse items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-yellow-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">4. קצר וקולע</h2>
+                    </div>
+                    <p class="text-gray-600">העדכונים צריכים להיות <span class="font-bold">קצרים ותמציתיים</span>. כותרת מודגשת • תוכן ענייני ללא חפירות.</p>
+                    <div class="mt-3 p-2 bg-gray-50 rounded border-r-2 border-yellow-400 text-xs text-gray-500">
+                        דוברות מד"א • פינוי פצוע קל מזירת האירוע.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Media -->
+            <div class="relative mb-12 flex flex-col md:flex-row items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-purple-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">5. שליחת מדיה</h2>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• <span class="font-bold">תמונה:</span> גרירה או הדבקה.</li>
+                        <li>• <span class="font-bold">סרטון:</span> לינק ישיר, יוטיוב או דרייב.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Step 6: End -->
+            <div class="relative mb-12 flex flex-col md:flex-row-reverse items-center justify-between">
+                <div class="hidden md:block w-5/12"></div>
+                <div class="step-dot hidden md:block" style="right: 50%; margin-right: -10px;"></div>
+                <div class="w-full md:w-5/12 bg-white p-6 rounded-2xl shadow-md border border-gray-100 step-card">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 bg-red-100 rounded-lg ml-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">6. סיום משמרת</h2>
+                    </div>
+                    <p class="text-gray-600">בסיום הפעילות, יש לכתוב בצ'אט <span class="font-bold text-red-600">"סיימתי לעדכן"</span> כדי לשחרר את ההרשאה למנהל הבא.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Final Footer -->
+        <div class="mt-16 text-center bg-gray-900 text-white p-8 rounded-3xl shadow-2xl">
+            <h3 class="text-2xl font-bold mb-2">זכרו: אמינות לפני מהירות!</h3>
+            <p class="text-gray-400 mb-6">אנחנו פועלים בצורה מקצועית ומסודרת.</p>
+            <div class="inline-block px-6 py-2 bg-blue-600 rounded-full font-bold">לכל שאלה - תפנו אלי באישי</div>
         </div>
     </div>
 
